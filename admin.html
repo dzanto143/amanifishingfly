@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Admin | Amani Fishing Wholesale</title>
+  <link rel="stylesheet" href="assets/style.css">
+
+  <style>
+    .upload-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 12px 0 6px;
+      color: var(--ink);
+    }
+
+    .image-options {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .upload-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 12px 18px;
+      border: 1px dashed var(--green2);
+      border-radius: 9px;
+      background: #f5f8f4;
+      color: var(--green);
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .upload-box:hover {
+      background: #eaf1ec;
+      transform: translateY(-1px);
+    }
+
+    .upload-box input {
+      display: none;
+    }
+
+    .or-text {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .image-url-input {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .image-preview {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      margin-top: 10px;
+      display: block;
+    }
+
+    .image-preview[hidden] {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="container nav">
+
+    <a class="logo" href="index.html">
+      <span>AMANI</span>
+      <small>FISHING WHOLESALE</small>
+    </a>
+
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+
+    <nav id="mainNav">
+      <a href="index.html">Storefront</a>
+      <a href="shop.html">Shop</a>
+      <a class="active" href="admin.html">Admin</a>
+    </nav>
+
+  </div>
+</header>
+
+<main class="section">
+  <div class="container admin-wrap">
+
+    <!-- LOGIN -->
+    <div id="loginPanel" class="form-card narrow">
+     <!-- <span class="eyebrow">STORE ADMIN</span>
+
+      <h1>Admin login</h1>
+
+      <input
+        id="adminUser"
+        class="input"
+        placeholder="Username"
+      >
+
+      <input
+        id="adminPass"
+        type="password"
+        class="input"
+        placeholder="Password"
+      >
+
+      <button
+        class="btn primary full"
+        onclick="adminLogin()"
+      >
+        Login
+      </button>
+
+      <p class="small">
+        Demo credentials: admin / amani123
+      </p>-->
+    </div>
+
+
+    <!-- ADMIN PANEL -->
+    <div id="adminPanel" hidden>
+
+      <div class="admin-top">
+
+        <div>
+          <span class="eyebrow">CONTROL CENTRE</span>
+          <h1>Manage your store</h1>
+        </div>
+
+        <button
+          class="btn outline"
+          onclick="adminLogout()"
+        >
+          Log out
+        </button>
+
+      </div> 
+
+
+      <!-- ADMIN TABS -->
+      <div class="admin-tabs">
+
+        <button onclick="showAdminTab('categoriesAdmin')">
+          Categories
+        </button>
+
+        <button onclick="showAdminTab('productsAdmin')">
+          Products
+        </button>
+
+        <button onclick="showAdminTab('ordersAdmin')">
+          Orders
+        </button>
+
+      </div>
+
+
+      <!-- CATEGORIES -->
+      <div id="categoriesAdmin" class="admin-tab">
+
+        <div class="admin-two">
+
+          <div class="form-card">
+
+            <h2>Add category</h2>
+
+            <input
+              id="catName"
+              class="input"
+              placeholder="Category name"
+            >
+
+            <input
+              id="catDesc"
+              class="input"
+              placeholder="Short description"
+            >
+
+
+            <!-- CATEGORY IMAGE -->
+            <label class="upload-label">
+              Category Image
+            </label>
+
+            <div class="image-options">
+
+              <label class="upload-box">
+
+                📁 Upload Image
+
+                <input
+                  id="catImageFile"
+                  type="file"
+                  accept="image/*"
+                  onchange="previewImage(this, 'catImagePreview')"
+                >
+
+              </label>
+
+              <span class="or-text">
+                OR
+              </span>
+
+              <input
+                id="catImage"
+                class="input image-url-input"
+                placeholder="Paste Image URL"
+                oninput="previewUrl(this, 'catImagePreview')"
+              >
+
+            </div>
+
+            <img
+              id="catImagePreview"
+              class="image-preview"
+              hidden
+              alt="Category image preview"
+            >
+
+
+            <button
+              class="btn primary full"
+              onclick="addCategory()"
+            >
+              Add category
+            </button>
+
+          </div>
+
+          <div id="categoryAdminList"></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- PRODUCTS -->
+      <div id="productsAdmin" class="admin-tab" hidden>
+
+        <div class="admin-two">
+
+          <div class="form-card">
+
+            <h2>Add product</h2>
+
+            <input
+              id="prodName"
+              class="input"
+              placeholder="Product name"
+            >
+
+            <select
+              id="prodCategory"
+              class="input"
+            ></select>
+
+            <input
+              id="prodPrice"
+              class="input"
+              type="number"
+              placeholder="Price (KES)"
+            >
+
+
+            <!-- PRODUCT IMAGE -->
+            <label class="upload-label">
+              Product Image
+            </label>
+
+            <div class="image-options">
+
+              <label class="upload-box">
+
+                📁 Upload Image
+
+                <input
+                  id="prodImageFile"
+                  type="file"
+                  accept="image/*"
+                  onchange="previewImage(this, 'prodImagePreview')"
+                >
+
+              </label>
+
+              <span class="or-text">
+                OR
+              </span>
+
+              <input
+                id="prodImage"
+                class="input image-url-input"
+                placeholder="Paste Image URL"
+                oninput="previewUrl(this, 'prodImagePreview')"
+              >
+
+            </div>
+
+            <img
+              id="prodImagePreview"
+              class="image-preview"
+              hidden
+              alt="Product image preview"
+            >
+
+
+            <input
+              id="prodSize"
+              class="input"
+              placeholder="Sizes e.g. 8, 10, 12"
+            >
+
+            <textarea
+              id="prodDesc"
+              class="input"
+              placeholder="Product description"
+            ></textarea>
+
+            <input
+              id="prodStock"
+              class="input"
+              type="number"
+              placeholder="Stock quantity"
+            >
+
+            <button
+              class="btn primary full"
+              onclick="addProduct()"
+            >
+              Add product
+            </button>
+
+          </div>
+
+          <div id="productAdminList"></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ORDERS -->
+      <div id="ordersAdmin" class="admin-tab" hidden>
+
+        <div id="ordersList"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+
+<footer>
+  <div class="copyright">
+    © 2026 Amani Fishing Wholesale.
+  </div>
+</footer>
+
+
+<script src="assets/app.js"></script>
+
+<script>
+  /*
+    IMAGE PREVIEW FROM COMPUTER
+  */
+  function previewImage(input, previewId) {
+
+    const preview = document.getElementById(previewId);
+
+    if (!input.files || !input.files[0]) {
+      preview.hidden = true;
+      preview.src = "";
+      return;
+    }
+
+    const file = input.files[0];
+
+    if (!file.type.startsWith("image/")) {
+
+      alert("Please select a valid image file.");
+
+      input.value = "";
+
+      preview.hidden = true;
+
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+
+      preview.src = e.target.result;
+
+      preview.hidden = false;
+
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+
+  /*
+    IMAGE PREVIEW FROM URL
+  */
+  function previewUrl(input, previewId) {
+
+    const preview = document.getElementById(previewId);
+
+    const url = input.value.trim();
+
+    if (!url) {
+
+      preview.hidden = true;
+
+      preview.src = "";
+
+      return;
+    }
+
+    preview.src = url;
+
+    preview.hidden = false;
+
+    preview.onerror = function () {
+
+      preview.hidden = true;
+
+    };
+  }
+
+
+  /*
+    CONVERT UPLOADED IMAGE TO DATA URL
+    SO IT CAN BE SAVED WITH THE PRODUCT/CATEGORY
+  */
+  function fileToDataURL(file) {
+
+    return new Promise((resolve, reject) => {
+
+      const reader = new FileReader();
+
+      reader.onload = () => resolve(reader.result);
+
+      reader.onerror = error => reject(error);
+
+      reader.readAsDataURL(file);
+
+    });
+
+  }
+
+
+  /*
+    ADD CATEGORY
+  */
+  async function addCategory() {
+
+    const name =
+      document.getElementById("catName").value.trim();
+
+    const desc =
+      document.getElementById("catDesc").value.trim();
+
+    const imageUrl =
+      document.getElementById("catImage").value.trim();
+
+    const imageFile =
+      document.getElementById("catImageFile").files[0];
+
+
+    if (!name) {
+
+      alert("Enter a category name.");
+
+      return;
+
+    }
+
+
+    let image = imageUrl;
+
+
+    /*
+      If an uploaded image exists,
+      use the uploaded image instead of URL.
+    */
+    if (imageFile) {
+
+      image = await fileToDataURL(imageFile);
+
+    }
+
+
+    /*
+      Default image if nothing was provided.
+    */
+    if (!image) {
+
+      image =
+        "https://images.unsplash.com/photo-1544550285-f813152fb2f5?auto=format&fit=crop&w=900&q=80";
+
+    }
+
+
+    const s = loadStore();
+
+
+    s.categories.push({
+
+      id:
+        slug(name) +
+        "-" +
+        Date.now().toString().slice(-4),
+
+      name: name,
+
+      desc: desc,
+
+      image: image
+
+    });
+
+
+    saveStore(s);
+
+
+    renderAdminCategories();
+
+    renderAdminProducts();
+
+
+    /*
+      Clear fields
+    */
+    document.getElementById("catName").value = "";
+
+    document.getElementById("catDesc").value = "";
+
+    document.getElementById("catImage").value = "";
+
+    document.getElementById("catImageFile").value = "";
+
+    document.getElementById("catImagePreview").hidden = true;
+
+    document.getElementById("catImagePreview").src = "";
+
+
+    alert("Category added successfully.");
+
+  }
+
+
+  /*
+    ADD PRODUCT
+  */
+  async function addProduct() {
+
+    const name =
+      document.getElementById("prodName").value.trim();
+
+    const category =
+      document.getElementById("prodCategory").value;
+
+    const price =
+      Number(
+        document.getElementById("prodPrice").value || 0
+      );
+
+
+    const imageUrl =
+      document.getElementById("prodImage").value.trim();
+
+    const imageFile =
+      document.getElementById("prodImageFile").files[0];
+
+
+    const sizes =
+      document.getElementById("prodSize").value;
+
+    const desc =
+      document.getElementById("prodDesc").value;
+
+    const stock =
+      Number(
+        document.getElementById("prodStock").value || 0
+      );
+
+
+    if (!name) {
+
+      alert("Enter product name.");
+
+      return;
+
+    }
+
+
+    if (!category) {
+
+      alert("Select a category.");
+
+      return;
+
+    }
+
+
+    let image = imageUrl;
+
+
+    /*
+      If an uploaded image exists,
+      use uploaded image instead of URL.
+    */
+    if (imageFile) {
+
+      image = await fileToDataURL(imageFile);
+
+    }
+
+
+    /*
+      Default product image.
+    */
+    if (!image) {
+
+      image =
+        "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=80";
+
+    }
+
+
+    const s = loadStore();
+
+
+    s.products.push({
+
+      id:
+        slug(name) +
+        "-" +
+        Date.now().toString().slice(-4),
+
+      name: name,
+
+      category: category,
+
+      price: price,
+
+      image: image,
+
+      sizes: sizes,
+
+      desc: desc,
+
+      stock: stock
+
+    });
+
+
+    saveStore(s);
+
+
+    renderAdminProducts();
+
+
+    /*
+      Clear fields
+    */
+    document.getElementById("prodName").value = "";
+
+    document.getElementById("prodPrice").value = "";
+
+    document.getElementById("prodImage").value = "";
+
+    document.getElementById("prodImageFile").value = "";
+
+    document.getElementById("prodSize").value = "";
+
+    document.getElementById("prodDesc").value = "";
+
+    document.getElementById("prodStock").value = "";
+
+    document.getElementById("prodImagePreview").hidden = true;
+
+    document.getElementById("prodImagePreview").src = "";
+
+
+    alert("Product added successfully.");
+
+  }
+
+
+  /*
+    START ADMIN
+  */
+  initAdmin();
+
+</script>
+
+</body>
+</html>
