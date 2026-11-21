@@ -1,4 +1,59 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Your Cart | Amani Fishing Wholesale</title><link rel="stylesheet" href="assets/style.css"></head><body>
-<header class="site-header"><div class="container nav"><a class="logo" href="index.html"><span>AMANI</span><small>FISHING WHOLESALE</small></a><button class="menu-btn" onclick="toggleMenu()">☰</button><nav id="mainNav"><a href="index.html">Home</a><a href="shop.html">Shop</a><a href="categories.html">Categories</a><a href="about.html">About</a><a href="contact.html">Contact</a><a class="cart-link active" href="cart.html">Cart <b id="cartCount">0</b></a><a class="admin-link" href="admin.html">Admin</a></nav></div></header>
-<section class="page-hero"><div class="container"><span class="eyebrow">YOUR ORDER</span><h1>Shopping cart</h1></div></section><section class="section"><div class="container cart-layout"><div id="cartItems"></div><div class="checkout-card"><h3>Checkout</h3><input id="customerName" class="input" placeholder="Full name"><input id="customerPhone" class="input" placeholder="Phone / WhatsApp"><input id="customerEmail" class="input" placeholder="Email"><textarea id="customerNotes" class="input" placeholder="Order notes"></textarea><div id="cartTotal" class="total"></div><button class="btn primary full" onclick="submitOrder()">Place Order</button><p class="small">For wholesale orders, we will confirm stock and final pricing with you.</p></div></div></section>
-<footer><div class="copyright">© 2026 Amani Fishing Wholesale.</div></footer><script src="assets/app.js"></script><script>renderCart();</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Your Cart | Amani Fishing Wholesale</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="container nav">
+                <a class="logo" href="index.html">
+                    <span>AMANI</span>
+                    <small>FISHING WHOLESALE</small>
+                </a>
+                <button class="menu-btn" onclick="toggleMenu()">☰</button>
+                <nav id="mainNav">
+                    <a href="index.html">Home</a>
+                    <a href="shop.html">Shop</a>
+                    <a href="categories.html">Categories</a>
+                    <a href="about.html">About</a>
+                    <a href="contact.html">Contact</a>
+                    <a class="cart-link active" href="cart.html">Cart <b id="cartCount">0</b></a>
+                    <a class="admin-link" href="admin.html">Admin</a>
+                </nav>
+            </div>
+        </header>
+
+        <section class="page-hero">
+            <div class="container">
+                <span class="eyebrow">YOUR ORDER</span>
+                <h1>Shopping cart</h1>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container cart-layout">
+                <div id="cartItems"></div>
+                <div class="checkout-card">
+                    <h3>Checkout</h3>
+                    <input id="customerName" class="input" placeholder="Full name">
+                    <input id="customerPhone" class="input" placeholder="Phone / WhatsApp">
+                    <input id="customerEmail" class="input" placeholder="Email">
+                    <textarea id="customerNotes" class("input") placeholder("Order notes")></textarea>
+                    <div id("cartTotal") class("total")></div>
+                    <button class("btn primary full") onclick("submitOrder()")>Place Order</button>
+                    <p class("small")>For wholesale orders, we will confirm stock and final pricing with you.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class("copyright")>© 2026 Amani Fishing Wholesale.</div>
+        </footer>
+
+        <script src="app.js"></script>
+        <script>renderCart();</script>
+    </body>
+</html>
