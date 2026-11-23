@@ -3,10 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
   <title>Admin | Amani Fishing Wholesale</title>
+
   <link rel="stylesheet" href="style.css">
 
   <style>
+
+    /* =====================================================
+       IMAGE UPLOAD
+    ===================================================== */
+
     .upload-label {
       display: block;
       font-size: 13px;
@@ -34,7 +41,7 @@
       color: var(--green);
       font-weight: 700;
       cursor: pointer;
-      transition: 0.2s ease;
+      transition: .2s ease;
       box-sizing: border-box;
     }
 
@@ -72,70 +79,207 @@
       display: none;
     }
 
+
+    /* =====================================================
+       ADMIN ITEM CARDS
+    ===================================================== */
+
+    .admin-list-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+    }
+
+    .admin-list-card img {
+      width: 100%;
+      height: 170px;
+      object-fit: cover;
+      border-radius: 9px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .admin-list-card h3 {
+      margin: 5px 0;
+    }
+
+    .admin-list-card p {
+      margin: 6px 0;
+      color: var(--muted);
+    }
+
     .admin-item-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
 
-.admin-item-actions button {
-  border: none;
-  padding: 9px 14px;
-  border-radius: 7px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
+    .admin-item-actions button {
+      border: none;
+      padding: 10px 15px;
+      border-radius: 7px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .2s ease;
+    }
 
-.edit-btn {
-  background: #1f86c9;
-  color: #fff;
-}
+    .edit-btn {
+      background: #1f86c9;
+      color: #fff;
+    }
 
-.edit-btn:hover {
-  opacity: 0.85;
-}
+    .edit-btn:hover {
+      opacity: .85;
+      transform: translateY(-1px);
+    }
 
-.delete-btn {
-  background: #dc3545;
-  color: #fff;
-}
+    .delete-btn {
+      background: #dc3545;
+      color: #fff;
+    }
 
-.delete-btn:hover {
-  opacity: 0.85;
-}
+    .delete-btn:hover {
+      opacity: .85;
+      transform: translateY(-1px);
+    }
 
-.admin-list-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 12px;
-}
 
-.admin-list-card img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 9px;
-  margin-bottom: 10px;
-}
+    /* =====================================================
+       EDIT MODAL
+    ===================================================== */
 
-.admin-list-card h3 {
-  margin: 5px 0;
-}
+    .edit-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 9999;
+      overflow-y: auto;
+    }
 
-.admin-list-card p {
-  margin: 5px 0;
-  color: var(--muted);
-}
+    .edit-modal[hidden] {
+      display: none;
+    }
+
+    .edit-modal-card {
+      width: 100%;
+      max-width: 650px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 25px;
+      box-sizing: border-box;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .edit-modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 18px;
+    }
+
+    .edit-modal-head h2 {
+      margin: 0;
+    }
+
+    .modal-close {
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 50%;
+      background: #f1f1f1;
+      color: #333;
+      font-size: 20px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .modal-close:hover {
+      background: #ddd;
+    }
+
+    .edit-current-image {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      margin-top: 10px;
+      display: block;
+    }
+
+    .edit-modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .edit-modal-actions button {
+      flex: 1;
+      min-width: 130px;
+    }
+
+    .cancel-btn {
+      background: #6c757d !important;
+      color: #fff !important;
+    }
+
+    .cancel-btn:hover {
+      opacity: .85;
+    }
+
+    .modal-section {
+      margin-bottom: 16px;
+    }
+
+    .modal-section label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    @media(max-width:600px) {
+
+      .edit-modal {
+        padding: 10px;
+      }
+
+      .edit-modal-card {
+        padding: 18px;
+        max-height: 95vh;
+      }
+
+      .edit-current-image {
+        height: 180px;
+      }
+
+    }
+
   </style>
 </head>
 
+
 <body>
 
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
 <header class="site-header">
+
   <div class="container nav">
 
     <a class="logo" href="index.html">
@@ -143,100 +287,184 @@
       <small>FISHING WHOLESALE</small>
     </a>
 
-    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    <button
+      class="menu-btn"
+      onclick="toggleMenu()"
+      type="button"
+    >
+      ☰
+    </button>
 
     <nav id="mainNav">
-      <a href="index.html">Storefront</a>
-      <a href="shop.html">Shop</a>
-      <a class="active" href="admin.html">Admin</a>
+
+      <a href="index.html">
+        Storefront
+      </a>
+
+      <a href="shop.html">
+        Shop
+      </a>
+
+      <a
+        class="active"
+        href="admin.html"
+      >
+        Admin
+      </a>
+
     </nav>
 
   </div>
+
 </header>
 
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
 <main class="section">
+
   <div class="container admin-wrap">
 
-    <!-- LOGIN -->
-    <div id="loginPanel" class="form-card narrow">
 
-  <span class="eyebrow">STORE ADMIN</span>
+    <!-- =================================================
+         LOGIN
+    ================================================== -->
 
-  <h1>Admin login</h1>
+    <div
+      id="loginPanel"
+      class="form-card narrow"
+    >
 
-  <input
-    id="adminUser"
-    class="input"
-    placeholder="Username"
-  >
+      <span class="eyebrow">
+        STORE ADMIN
+      </span>
 
-  <input
-    id="adminPass"
-    type="password"
-    class="input"
-    placeholder="Password"
-  >
+      <h1>
+        Admin login
+      </h1>
 
-  <button
-    class="btn primary full"
-    onclick="adminLogin()"
-  >
-    Login
-  </button>
+      <input
+        id="adminUser"
+        class="input"
+        placeholder="Username"
+        autocomplete="username"
+      >
 
-  <p class="small">
-    Demo credentials: admin / amani123
-  </p>
+      <input
+        id="adminPass"
+        type="password"
+        class="input"
+        placeholder="Password"
+        autocomplete="current-password"
+      >
 
-</div>
+      <button
+        class="btn primary full"
+        onclick="adminLogin()"
+        type="button"
+      >
+        Login
+      </button>
+
+      <p class="small">
+        Demo credentials: admin / amani123
+      </p>
+
+    </div>
 
 
-    <!-- ADMIN PANEL -->
-    <div id="adminPanel" hidden>
+
+    <!-- =================================================
+         ADMIN PANEL
+    ================================================== -->
+
+    <div
+      id="adminPanel"
+      hidden
+    >
+
+
+      <!-- ADMIN TOP -->
 
       <div class="admin-top">
 
         <div>
-          <span class="eyebrow">CONTROL CENTRE</span>
-          <h1>Manage your store</h1>
+
+          <span class="eyebrow">
+            CONTROL CENTRE
+          </span>
+
+          <h1>
+            Manage your store
+          </h1>
+
         </div>
 
         <button
           class="btn outline"
           onclick="adminLogout()"
+          type="button"
         >
           Log out
         </button>
 
-      </div> 
+      </div>
 
 
-      <!-- ADMIN TABS -->
+
+      <!-- =================================================
+           ADMIN TABS
+      ================================================== -->
+
       <div class="admin-tabs">
 
-        <button onclick="showAdminTab('categoriesAdmin')">
+        <button
+          type="button"
+          onclick="showAdminTab('categoriesAdmin')"
+        >
           Categories
         </button>
 
-        <button onclick="showAdminTab('productsAdmin')">
+        <button
+          type="button"
+          onclick="showAdminTab('productsAdmin')"
+        >
           Products
         </button>
 
-        <button onclick="showAdminTab('ordersAdmin')">
+        <button
+          type="button"
+          onclick="showAdminTab('ordersAdmin')"
+        >
           Orders
         </button>
 
       </div>
 
 
-      <!-- CATEGORIES -->
-      <div id="categoriesAdmin" class="admin-tab">
+
+      <!-- =================================================
+           CATEGORIES
+      ================================================== -->
+
+      <div
+        id="categoriesAdmin"
+        class="admin-tab"
+      >
 
         <div class="admin-two">
 
+
+          <!-- ADD CATEGORY -->
+
           <div class="form-card">
 
-            <h2>Add category</h2>
+            <h2>
+              Add category
+            </h2>
 
             <input
               id="catName"
@@ -251,7 +479,6 @@
             >
 
 
-            <!-- CATEGORY IMAGE -->
             <label class="upload-label">
               Category Image
             </label>
@@ -266,7 +493,7 @@
                   id="catImageFile"
                   type="file"
                   accept="image/*"
-                  onchange="previewImage(this, 'catImagePreview')"
+                  onchange="previewImage(this,'catImagePreview')"
                 >
 
               </label>
@@ -279,10 +506,11 @@
                 id="catImage"
                 class="input image-url-input"
                 placeholder="Paste Image URL"
-                oninput="previewUrl(this, 'catImagePreview')"
+                oninput="previewUrl(this,'catImagePreview')"
               >
 
             </div>
+
 
             <img
               id="catImagePreview"
@@ -295,11 +523,15 @@
             <button
               class="btn primary full"
               onclick="addCategory()"
+              type="button"
             >
               Add category
             </button>
 
           </div>
+
+
+          <!-- CATEGORY LIST -->
 
           <div id="categoryAdminList"></div>
 
@@ -308,14 +540,27 @@
       </div>
 
 
-      <!-- PRODUCTS -->
-      <div id="productsAdmin" class="admin-tab" hidden>
+
+      <!-- =================================================
+           PRODUCTS
+      ================================================== -->
+
+      <div
+        id="productsAdmin"
+        class="admin-tab"
+        hidden
+      >
 
         <div class="admin-two">
 
+
+          <!-- ADD PRODUCT -->
+
           <div class="form-card">
 
-            <h2>Add product</h2>
+            <h2>
+              Add product
+            </h2>
 
             <input
               id="prodName"
@@ -323,20 +568,23 @@
               placeholder="Product name"
             >
 
+
             <select
               id="prodCategory"
               class="input"
             ></select>
 
+
             <input
               id="prodPrice"
               class="input"
               type="number"
-              placeholder="Price (USD)"
+              min="0"
+              step="0.01"
+              placeholder="Price (KES)"
             >
 
 
-            <!-- PRODUCT IMAGE -->
             <label class="upload-label">
               Product Image
             </label>
@@ -351,7 +599,7 @@
                   id="prodImageFile"
                   type="file"
                   accept="image/*"
-                  onchange="previewImage(this, 'prodImagePreview')"
+                  onchange="previewImage(this,'prodImagePreview')"
                 >
 
               </label>
@@ -364,10 +612,11 @@
                 id="prodImage"
                 class="input image-url-input"
                 placeholder="Paste Image URL"
-                oninput="previewUrl(this, 'prodImagePreview')"
+                oninput="previewUrl(this,'prodImagePreview')"
               >
 
             </div>
+
 
             <img
               id="prodImagePreview"
@@ -383,27 +632,35 @@
               placeholder="Sizes e.g. 8, 10, 12"
             >
 
+
             <textarea
               id="prodDesc"
               class="input"
               placeholder="Product description"
             ></textarea>
 
+
             <input
               id="prodStock"
               class="input"
               type="number"
+              min="0"
               placeholder="Stock quantity"
             >
+
 
             <button
               class="btn primary full"
               onclick="addProduct()"
+              type="button"
             >
               Add product
             </button>
 
           </div>
+
+
+          <!-- PRODUCT LIST -->
 
           <div id="productAdminList"></div>
 
@@ -412,789 +669,2319 @@
       </div>
 
 
-      <!-- ORDERS -->
-      <div id="ordersAdmin" class="admin-tab" hidden>
+
+      <!-- =================================================
+           ORDERS
+      ================================================== -->
+
+      <div
+        id="ordersAdmin"
+        class="admin-tab"
+        hidden
+      >
 
         <div id="ordersList"></div>
 
       </div>
 
+
     </div>
 
   </div>
+
 </main>
 
 
-<footer>
-  <div class="copyright">
-    © 2026 Amani Fishing Wholesale.
+
+<!-- =====================================================
+     EDIT MODAL
+===================================================== -->
+
+<div
+  id="editModal"
+  class="edit-modal"
+  hidden
+>
+
+  <div class="edit-modal-card">
+
+
+    <div class="edit-modal-head">
+
+      <h2 id="editModalTitle">
+        Edit item
+      </h2>
+
+      <button
+        type="button"
+        class="modal-close"
+        onclick="closeEditModal()"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <!-- Hidden information -->
+
+    <input
+      id="editItemId"
+      type="hidden"
+    >
+
+    <input
+      id="editItemType"
+      type="hidden"
+    >
+
+
+
+    <!-- NAME -->
+
+    <div class="modal-section">
+
+      <label for="editName">
+        Name
+      </label>
+
+      <input
+        id="editName"
+        class="input"
+        placeholder="Name"
+      >
+
+    </div>
+
+
+
+    <!-- CATEGORY -->
+
+    <div
+      id="editCategoryWrapper"
+      class="modal-section"
+      hidden
+    >
+
+      <label for="editCategory">
+        Product Category
+      </label>
+
+      <select
+        id="editCategory"
+        class="input"
+      ></select>
+
+    </div>
+
+
+
+    <!-- PRICE -->
+
+    <div
+      id="editPriceWrapper"
+      class="modal-section"
+      hidden
+    >
+
+      <label for="editPrice">
+        Price (KES)
+      </label>
+
+      <input
+        id="editPrice"
+        class="input"
+        type="number"
+        min="0"
+        step="0.01"
+        placeholder="Price"
+      >
+
+    </div>
+
+
+
+    <!-- SIZE -->
+
+    <div
+      id="editSizeWrapper"
+      class="modal-section"
+      hidden
+    >
+
+      <label for="editSize">
+        Sizes
+      </label>
+
+      <input
+        id="editSize"
+        class="input"
+        placeholder="e.g. 8, 10, 12"
+      >
+
+    </div>
+
+
+
+    <!-- DESCRIPTION -->
+
+    <div class="modal-section">
+
+      <label for="editDesc">
+        Description
+      </label>
+
+      <textarea
+        id="editDesc"
+        class="input"
+        placeholder="Description"
+      ></textarea>
+
+    </div>
+
+
+
+    <!-- STOCK -->
+
+    <div
+      id="editStockWrapper"
+      class="modal-section"
+      hidden
+    >
+
+      <label for="editStock">
+        Stock Quantity
+      </label>
+
+      <input
+        id="editStock"
+        class="input"
+        type="number"
+        min="0"
+        placeholder="Stock"
+      >
+
+    </div>
+
+
+
+    <!-- IMAGE -->
+
+    <div class="modal-section">
+
+      <label class="upload-label">
+        Image
+      </label>
+
+      <div class="image-options">
+
+
+        <label class="upload-box">
+
+          📁 Upload Image
+
+          <input
+            id="editImageFile"
+            type="file"
+            accept="image/*"
+            onchange="previewImage(this,'editImagePreview')"
+          >
+
+        </label>
+
+
+        <span class="or-text">
+          OR
+        </span>
+
+
+        <input
+          id="editImage"
+          class="input image-url-input"
+          placeholder="Paste Image URL"
+          oninput="previewUrl(this,'editImagePreview')"
+        >
+
+      </div>
+
+
+      <img
+        id="editImagePreview"
+        class="edit-current-image"
+        hidden
+        alt="Edit image preview"
+      >
+
+    </div>
+
+
+
+    <!-- BUTTONS -->
+
+    <div class="edit-modal-actions">
+
+      <button
+        type="button"
+        class="btn primary"
+        onclick="saveEditedItem()"
+      >
+        Save Changes
+      </button>
+
+      <button
+        type="button"
+        class="btn cancel-btn"
+        onclick="closeEditModal()"
+      >
+        Cancel
+      </button>
+
+    </div>
+
+
   </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
+<footer>
+
+  <div class="copyright">
+
+    © 2026 Amani Fishing Wholesale.
+
+  </div>
+
 </footer>
 
 
+
+<!-- =====================================================
+     MAIN APP JAVASCRIPT
+===================================================== -->
+
 <script src="app.js"></script>
 
+
+
 <script>
-  /*
-    IMAGE PREVIEW FROM COMPUTER
-  */
-  function previewImage(input, previewId) {
 
-    const preview = document.getElementById(previewId);
+/* =====================================================
+   IMAGE PREVIEW FROM COMPUTER
+===================================================== */
 
-    if (!input.files || !input.files[0]) {
-      preview.hidden = true;
-      preview.src = "";
-      return;
-    }
+function previewImage(input, previewId) {
 
-    const file = input.files[0];
+  const preview =
+    document.getElementById(previewId);
 
-    if (!file.type.startsWith("image/")) {
+  if (!preview) return;
 
-      alert("Please select a valid image file.");
 
-      input.value = "";
+  if (
+    !input.files ||
+    !input.files[0]
+  ) {
 
-      preview.hidden = true;
+    preview.hidden = true;
+    preview.src = "";
 
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = function (e) {
-
-      preview.src = e.target.result;
-
-      preview.hidden = false;
-
-    };
-
-    reader.readAsDataURL(file);
+    return;
   }
 
 
-  /*
-    IMAGE PREVIEW FROM URL
-  */
-  function previewUrl(input, previewId) {
+  const file =
+    input.files[0];
 
-    const preview = document.getElementById(previewId);
 
-    const url = input.value.trim();
+  if (
+    !file.type.startsWith("image/")
+  ) {
 
-    if (!url) {
+    alert(
+      "Please select a valid image file."
+    );
 
-      preview.hidden = true;
+    input.value = "";
 
-      preview.src = "";
+    preview.hidden = true;
+    preview.src = "";
 
-      return;
-    }
+    return;
+  }
 
-    preview.src = url;
 
-    preview.hidden = false;
+  const reader =
+    new FileReader();
 
-    preview.onerror = function () {
+
+  reader.onload =
+    function(e) {
+
+      preview.src =
+        e.target.result;
+
+      preview.hidden =
+        false;
+
+    };
+
+
+  reader.readAsDataURL(file);
+
+}
+
+
+
+/* =====================================================
+   IMAGE PREVIEW FROM URL
+===================================================== */
+
+function previewUrl(input, previewId) {
+
+  const preview =
+    document.getElementById(previewId);
+
+  if (!preview) return;
+
+
+  const url =
+    input.value.trim();
+
+
+  if (!url) {
+
+    preview.hidden = true;
+    preview.src = "";
+
+    return;
+  }
+
+
+  preview.src = url;
+
+  preview.hidden = false;
+
+
+  preview.onerror =
+    function() {
 
       preview.hidden = true;
 
     };
-  }
+
+}
 
 
-  /*
-    CONVERT UPLOADED IMAGE TO DATA URL
-    SO IT CAN BE SAVED WITH THE PRODUCT/CATEGORY
-  */
-  function fileToDataURL(file) {
 
-    return new Promise((resolve, reject) => {
+/* =====================================================
+   FILE TO DATA URL
+===================================================== */
 
-      const reader = new FileReader();
+function fileToDataURL(file) {
 
-      reader.onload = () => resolve(reader.result);
+  return new Promise(
+    function(resolve,reject) {
 
-      reader.onerror = error => reject(error);
+      const reader =
+        new FileReader();
+
+
+      reader.onload =
+        function() {
+
+          resolve(
+            reader.result
+          );
+
+        };
+
+
+      reader.onerror =
+        function(error) {
+
+          reject(error);
+
+        };
+
 
       reader.readAsDataURL(file);
 
-    });
+    }
+  );
+
+}
+
+
+
+/* =====================================================
+   ESCAPE TEXT
+===================================================== */
+
+function escapeAdminText(text) {
+
+  return String(text || "")
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+
+/* =====================================================
+   SAFE IMAGE URL
+===================================================== */
+
+function safeImage(image) {
+
+  if (!image) {
+
+    return "https://via.placeholder.com/600x400?text=No+Image";
+
+  }
+
+  return String(image)
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+
+/* =====================================================
+   ADD CATEGORY
+===================================================== */
+
+async function addCategory() {
+
+  const name =
+    document
+      .getElementById("catName")
+      .value
+      .trim();
+
+
+  const desc =
+    document
+      .getElementById("catDesc")
+      .value
+      .trim();
+
+
+  const imageUrl =
+    document
+      .getElementById("catImage")
+      .value
+      .trim();
+
+
+  const imageFile =
+    document
+      .getElementById("catImageFile")
+      .files[0];
+
+
+  if (!name) {
+
+    alert(
+      "Enter a category name."
+    );
+
+    return;
+  }
+
+
+  let image =
+    imageUrl;
+
+
+  if (imageFile) {
+
+    try {
+
+      image =
+        await fileToDataURL(
+          imageFile
+        );
+
+    } catch(error) {
+
+      alert(
+        "Unable to read the selected image."
+      );
+
+      return;
+    }
 
   }
 
 
-  /*
-    ADD CATEGORY
-  */
-  async function addCategory() {
+  if (!image) {
 
-    const name =
-      document.getElementById("catName").value.trim();
+    image =
+      "https://images.unsplash.com/photo-1544550285-f813152fb2f5?auto=format&fit=crop&w=900&q=80";
 
-    const desc =
-      document.getElementById("catDesc").value.trim();
-
-    const imageUrl =
-      document.getElementById("catImage").value.trim();
-
-    const imageFile =
-      document.getElementById("catImageFile").files[0];
+  }
 
 
-    if (!name) {
-
-      alert("Enter a category name.");
-
-      return;
-
-    }
+  const s =
+    loadStore();
 
 
-    let image = imageUrl;
+  if (!s.categories) {
+
+    s.categories = [];
+
+  }
 
 
-    /*
-      If an uploaded image exists,
-      use the uploaded image instead of URL.
-    */
-    if (imageFile) {
-
-      image = await fileToDataURL(imageFile);
-
-    }
+  const categoryId =
+    slug(name) +
+    "-" +
+    Date.now()
+      .toString()
+      .slice(-6);
 
 
-    /*
-      Default image if nothing was provided.
-    */
-    if (!image) {
+  s.categories.push({
+
+    id: categoryId,
+
+    name: name,
+
+    desc: desc,
+
+    image: image
+
+  });
+
+
+  saveStore(s);
+
+
+  renderAdminCategories();
+
+  renderAdminProducts();
+
+
+  /* Clear */
+
+  document
+    .getElementById("catName")
+    .value = "";
+
+
+  document
+    .getElementById("catDesc")
+    .value = "";
+
+
+  document
+    .getElementById("catImage")
+    .value = "";
+
+
+  document
+    .getElementById("catImageFile")
+    .value = "";
+
+
+  document
+    .getElementById("catImagePreview")
+    .hidden = true;
+
+
+  document
+    .getElementById("catImagePreview")
+    .src = "";
+
+
+  /* Update product category */
+
+  populateProductCategories();
+
+
+  alert(
+    "Category added successfully."
+  );
+
+}
+
+
+
+/* =====================================================
+   ADD PRODUCT
+===================================================== */
+
+async function addProduct() {
+
+  const name =
+    document
+      .getElementById("prodName")
+      .value
+      .trim();
+
+
+  const category =
+    document
+      .getElementById("prodCategory")
+      .value;
+
+
+  const price =
+    Number(
+      document
+        .getElementById("prodPrice")
+        .value || 0
+    );
+
+
+  const imageUrl =
+    document
+      .getElementById("prodImage")
+      .value
+      .trim();
+
+
+  const imageFile =
+    document
+      .getElementById("prodImageFile")
+      .files[0];
+
+
+  const sizes =
+    document
+      .getElementById("prodSize")
+      .value
+      .trim();
+
+
+  const desc =
+    document
+      .getElementById("prodDesc")
+      .value
+      .trim();
+
+
+  const stock =
+    Number(
+      document
+        .getElementById("prodStock")
+        .value || 0
+    );
+
+
+  if (!name) {
+
+    alert(
+      "Enter product name."
+    );
+
+    return;
+  }
+
+
+  if (!category) {
+
+    alert(
+      "Select a category."
+    );
+
+    return;
+  }
+
+
+  if (price < 0) {
+
+    alert(
+      "Price cannot be negative."
+    );
+
+    return;
+  }
+
+
+  if (stock < 0) {
+
+    alert(
+      "Stock cannot be negative."
+    );
+
+    return;
+  }
+
+
+  let image =
+    imageUrl;
+
+
+  if (imageFile) {
+
+    try {
 
       image =
-        "https://images.unsplash.com/photo-1544550285-f813152fb2f5?auto=format&fit=crop&w=900&q=80";
+        await fileToDataURL(
+          imageFile
+        );
 
+    } catch(error) {
+
+      alert(
+        "Unable to read the selected image."
+      );
+
+      return;
+    }
+
+  }
+
+
+  if (!image) {
+
+    image =
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=80";
+
+  }
+
+
+  const s =
+    loadStore();
+
+
+  if (!s.products) {
+
+    s.products = [];
+
+  }
+
+
+  const productId =
+    slug(name) +
+    "-" +
+    Date.now()
+      .toString()
+      .slice(-6);
+
+
+  s.products.push({
+
+    id: productId,
+
+    name: name,
+
+    category: category,
+
+    price: price,
+
+    image: image,
+
+    sizes: sizes,
+
+    desc: desc,
+
+    stock: stock
+
+  });
+
+
+  saveStore(s);
+
+
+  renderAdminProducts();
+
+
+  /* Clear fields */
+
+  document
+    .getElementById("prodName")
+    .value = "";
+
+
+  document
+    .getElementById("prodPrice")
+    .value = "";
+
+
+  document
+    .getElementById("prodImage")
+    .value = "";
+
+
+  document
+    .getElementById("prodImageFile")
+    .value = "";
+
+
+  document
+    .getElementById("prodSize")
+    .value = "";
+
+
+  document
+    .getElementById("prodDesc")
+    .value = "";
+
+
+  document
+    .getElementById("prodStock")
+    .value = "";
+
+
+  document
+    .getElementById("prodImagePreview")
+    .hidden = true;
+
+
+  document
+    .getElementById("prodImagePreview")
+    .src = "";
+
+
+  alert(
+    "Product added successfully."
+  );
+
+}
+
+
+
+/* =====================================================
+   POPULATE PRODUCT CATEGORIES
+===================================================== */
+
+function populateProductCategories() {
+
+  const select =
+    document.getElementById(
+      "prodCategory"
+    );
+
+
+  if (!select) return;
+
+
+  const s =
+    loadStore();
+
+
+  select.innerHTML = "";
+
+
+  if (
+    !s.categories ||
+    s.categories.length === 0
+  ) {
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+    option.value = "";
+
+    option.textContent =
+      "Add a category first";
+
+    select.appendChild(
+      option
+    );
+
+    return;
+  }
+
+
+  const defaultOption =
+    document.createElement(
+      "option"
+    );
+
+  defaultOption.value = "";
+
+  defaultOption.textContent =
+    "Select category";
+
+  select.appendChild(
+    defaultOption
+  );
+
+
+  s.categories.forEach(
+    function(category) {
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        category.id;
+
+      option.textContent =
+        category.name;
+
+      select.appendChild(
+        option
+      );
+
+    }
+  );
+
+}
+
+
+
+/* =====================================================
+   RENDER CATEGORIES
+===================================================== */
+
+function renderAdminCategories() {
+
+  const list =
+    document.getElementById(
+      "categoryAdminList"
+    );
+
+
+  if (!list) return;
+
+
+  const s =
+    loadStore();
+
+
+  if (
+    !s.categories ||
+    s.categories.length === 0
+  ) {
+
+    list.innerHTML = `
+
+      <div class="form-card">
+
+        <p class="small">
+          No categories added yet.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+
+  list.innerHTML =
+    s.categories
+      .map(
+        function(category) {
+
+          return `
+
+            <div
+              class="admin-list-card"
+            >
+
+              <img
+                src="${safeImage(category.image)}"
+                alt="${escapeAdminText(category.name)}"
+                onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"
+              >
+
+              <h3>
+                ${escapeAdminText(category.name)}
+              </h3>
+
+              <p>
+                ${escapeAdminText(
+                  category.desc ||
+                  "No description"
+                )}
+              </p>
+
+
+              <div
+                class="admin-item-actions"
+              >
+
+                <button
+                  class="edit-btn"
+                  type="button"
+                  onclick="editCategory('${category.id}')"
+                >
+                  ✏️ Edit
+                </button>
+
+
+                <button
+                  class="delete-btn"
+                  type="button"
+                  onclick="deleteCategory('${category.id}')"
+                >
+                  🗑️ Delete
+                </button>
+
+              </div>
+
+            </div>
+
+          `;
+
+        }
+      )
+      .join("");
+
+}
+
+
+
+/* =====================================================
+   RENDER PRODUCTS
+===================================================== */
+
+function renderAdminProducts() {
+
+  const list =
+    document.getElementById(
+      "productAdminList"
+    );
+
+
+  if (!list) return;
+
+
+  const s =
+    loadStore();
+
+
+  if (
+    !s.products ||
+    s.products.length === 0
+  ) {
+
+    list.innerHTML = `
+
+      <div class="form-card">
+
+        <p class="small">
+          No products added yet.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+
+  list.innerHTML =
+    s.products
+      .map(
+        function(product) {
+
+
+          const category =
+            (s.categories || [])
+              .find(
+                function(c) {
+
+                  return c.id ===
+                    product.category;
+
+                }
+              );
+
+
+          return `
+
+            <div
+              class="admin-list-card"
+            >
+
+              <img
+                src="${safeImage(product.image)}"
+                alt="${escapeAdminText(product.name)}"
+                onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"
+              >
+
+
+              <h3>
+                ${escapeAdminText(
+                  product.name
+                )}
+              </h3>
+
+
+              <p>
+                Category:
+                <strong>
+                  ${escapeAdminText(
+                    category
+                      ? category.name
+                      : "Unknown"
+                  )}
+                </strong>
+              </p>
+
+
+              <p>
+                Price:
+                <strong>
+                  KES ${Number(
+                    product.price || 0
+                  ).toLocaleString()}
+                </strong>
+              </p>
+
+
+              <p>
+                Stock:
+                <strong>
+                  ${Number(
+                    product.stock || 0
+                  )}
+                </strong>
+              </p>
+
+
+              <div
+                class="admin-item-actions"
+              >
+
+                <button
+                  class="edit-btn"
+                  type="button"
+                  onclick="editProduct('${product.id}')"
+                >
+                  ✏️ Edit
+                </button>
+
+
+                <button
+                  class="delete-btn"
+                  type="button"
+                  onclick="deleteProduct('${product.id}')"
+                >
+                  🗑️ Delete
+                </button>
+
+              </div>
+
+            </div>
+
+          `;
+
+        }
+      )
+      .join("");
+
+}
+
+
+
+/* =====================================================
+   DELETE CATEGORY
+===================================================== */
+
+function deleteCategory(id) {
+
+  const s =
+    loadStore();
+
+
+  const category =
+    (s.categories || [])
+      .find(
+        function(c) {
+
+          return c.id === id;
+
+        }
+      );
+
+
+  if (!category) {
+
+    alert(
+      "Category not found."
+    );
+
+    return;
+  }
+
+
+  const productsUsingCategory =
+    (s.products || [])
+      .filter(
+        function(product) {
+
+          return product.category === id;
+
+        }
+      );
+
+
+  /*
+    DO NOT DELETE A CATEGORY
+    THAT STILL HAS PRODUCTS.
+  */
+
+  if (
+    productsUsingCategory.length > 0
+  ) {
+
+    alert(
+      "You cannot delete this category yet.\n\n" +
+      productsUsingCategory.length +
+      " product(s) are currently using this category.\n\n" +
+      "Edit or delete those products first."
+    );
+
+    return;
+  }
+
+
+  const confirmed =
+    confirm(
+      'Delete category "' +
+      category.name +
+      '"?\n\n' +
+      "This action cannot be undone."
+    );
+
+
+  if (!confirmed) return;
+
+
+  s.categories =
+    s.categories.filter(
+      function(c) {
+
+        return c.id !== id;
+
+      }
+    );
+
+
+  saveStore(s);
+
+
+  renderAdminCategories();
+
+  renderAdminProducts();
+
+  populateProductCategories();
+
+
+  alert(
+    "Category deleted successfully."
+  );
+
+}
+
+
+
+/* =====================================================
+   DELETE PRODUCT
+===================================================== */
+
+function deleteProduct(id) {
+
+  const s =
+    loadStore();
+
+
+  const product =
+    (s.products || [])
+      .find(
+        function(p) {
+
+          return p.id === id;
+
+        }
+      );
+
+
+  if (!product) {
+
+    alert(
+      "Product not found."
+    );
+
+    return;
+  }
+
+
+  const confirmed =
+    confirm(
+      'Delete "' +
+      product.name +
+      '"?\n\n' +
+      "This action cannot be undone."
+    );
+
+
+  if (!confirmed) return;
+
+
+  s.products =
+    s.products.filter(
+      function(p) {
+
+        return p.id !== id;
+
+      }
+    );
+
+
+  saveStore(s);
+
+
+  renderAdminProducts();
+
+
+  alert(
+    "Product deleted successfully."
+  );
+
+}
+
+
+
+/* =====================================================
+   EDIT CATEGORY
+===================================================== */
+
+function editCategory(id) {
+
+  const s =
+    loadStore();
+
+
+  const category =
+    (s.categories || [])
+      .find(
+        function(c) {
+
+          return c.id === id;
+
+        }
+      );
+
+
+  if (!category) {
+
+    alert(
+      "Category not found."
+    );
+
+    return;
+  }
+
+
+  /* Set modal type */
+
+  document
+    .getElementById("editItemId")
+    .value = id;
+
+
+  document
+    .getElementById("editItemType")
+    .value = "category";
+
+
+  /* Modal title */
+
+  document
+    .getElementById("editModalTitle")
+    .textContent =
+      "Edit Category";
+
+
+  /* Name */
+
+  document
+    .getElementById("editName")
+    .value =
+      category.name || "";
+
+
+  /* Description */
+
+  document
+    .getElementById("editDesc")
+    .value =
+      category.desc || "";
+
+
+  /* Hide product fields */
+
+  document
+    .getElementById(
+      "editCategoryWrapper"
+    )
+    .hidden = true;
+
+
+  document
+    .getElementById(
+      "editPriceWrapper"
+    )
+    .hidden = true;
+
+
+  document
+    .getElementById(
+      "editSizeWrapper"
+    )
+    .hidden = true;
+
+
+  document
+    .getElementById(
+      "editStockWrapper"
+    )
+    .hidden = true;
+
+
+  /* Image */
+
+  document
+    .getElementById("editImage")
+    .value =
+      category.image &&
+      !category.image.startsWith("data:")
+        ? category.image
+        : "";
+
+
+  document
+    .getElementById("editImageFile")
+    .value = "";
+
+
+  const imagePreview =
+    document.getElementById(
+      "editImagePreview"
+    );
+
+
+  if (category.image) {
+
+    imagePreview.src =
+      category.image;
+
+    imagePreview.hidden =
+      false;
+
+  } else {
+
+    imagePreview.src = "";
+
+    imagePreview.hidden =
+      true;
+
+  }
+
+
+  /* Show modal */
+
+  document
+    .getElementById("editModal")
+    .hidden = false;
+
+
+  document.body.style.overflow =
+    "hidden";
+
+}
+
+
+
+/* =====================================================
+   EDIT PRODUCT
+===================================================== */
+
+function editProduct(id) {
+
+  const s =
+    loadStore();
+
+
+  const product =
+    (s.products || [])
+      .find(
+        function(p) {
+
+          return p.id === id;
+
+        }
+      );
+
+
+  if (!product) {
+
+    alert(
+      "Product not found."
+    );
+
+    return;
+  }
+
+
+  /* Set modal information */
+
+  document
+    .getElementById("editItemId")
+    .value = id;
+
+
+  document
+    .getElementById("editItemType")
+    .value = "product";
+
+
+  /* Title */
+
+  document
+    .getElementById("editModalTitle")
+    .textContent =
+      "Edit Product";
+
+
+  /* Name */
+
+  document
+    .getElementById("editName")
+    .value =
+      product.name || "";
+
+
+  /* Description */
+
+  document
+    .getElementById("editDesc")
+    .value =
+      product.desc || "";
+
+
+  /* Price */
+
+  document
+    .getElementById("editPrice")
+    .value =
+      product.price || 0;
+
+
+  /* Size */
+
+  document
+    .getElementById("editSize")
+    .value =
+      product.sizes || "";
+
+
+  /* Stock */
+
+  document
+    .getElementById("editStock")
+    .value =
+      product.stock || 0;
+
+
+  /* Show product fields */
+
+  document
+    .getElementById(
+      "editCategoryWrapper"
+    )
+    .hidden = false;
+
+
+  document
+    .getElementById(
+      "editPriceWrapper"
+    )
+    .hidden = false;
+
+
+  document
+    .getElementById(
+      "editSizeWrapper"
+    )
+    .hidden = false;
+
+
+  document
+    .getElementById(
+      "editStockWrapper"
+    )
+    .hidden = false;
+
+
+  /* Load categories */
+
+  const categorySelect =
+    document.getElementById(
+      "editCategory"
+    );
+
+
+  categorySelect.innerHTML = "";
+
+
+  (s.categories || [])
+    .forEach(
+      function(category) {
+
+        const option =
+          document.createElement(
+            "option"
+          );
+
+        option.value =
+          category.id;
+
+        option.textContent =
+          category.name;
+
+        if (
+          category.id ===
+          product.category
+        ) {
+
+          option.selected =
+            true;
+
+        }
+
+        categorySelect.appendChild(
+          option
+        );
+
+      }
+    );
+
+
+  /* Image */
+
+  document
+    .getElementById("editImage")
+    .value =
+      product.image &&
+      !product.image.startsWith("data:")
+        ? product.image
+        : "";
+
+
+  document
+    .getElementById("editImageFile")
+    .value = "";
+
+
+  const imagePreview =
+    document.getElementById(
+      "editImagePreview"
+    );
+
+
+  if (product.image) {
+
+    imagePreview.src =
+      product.image;
+
+    imagePreview.hidden =
+      false;
+
+  } else {
+
+    imagePreview.src = "";
+
+    imagePreview.hidden =
+      true;
+
+  }
+
+
+  /* Show modal */
+
+  document
+    .getElementById("editModal")
+    .hidden = false;
+
+
+  document.body.style.overflow =
+    "hidden";
+
+}
+
+
+
+/* =====================================================
+   SAVE EDITED ITEM
+===================================================== */
+
+async function saveEditedItem() {
+
+  const id =
+    document
+      .getElementById("editItemId")
+      .value;
+
+
+  const type =
+    document
+      .getElementById("editItemType")
+      .value;
+
+
+  const name =
+    document
+      .getElementById("editName")
+      .value
+      .trim();
+
+
+  const desc =
+    document
+      .getElementById("editDesc")
+      .value
+      .trim();
+
+
+  if (!name) {
+
+    alert(
+      "Name cannot be empty."
+    );
+
+    return;
+  }
+
+
+  const s =
+    loadStore();
+
+
+  /*
+    =========================================
+    EDIT CATEGORY
+    =========================================
+  */
+
+  if (type === "category") {
+
+    const category =
+      (s.categories || [])
+        .find(
+          function(c) {
+
+            return c.id === id;
+
+          }
+        );
+
+
+    if (!category) {
+
+      alert(
+        "Category not found."
+      );
+
+      return;
     }
 
 
-    const s = loadStore();
+    category.name =
+      name;
 
 
-    s.categories.push({
+    category.desc =
+      desc;
 
-      id:
-        slug(name) +
-        "-" +
-        Date.now().toString().slice(-4),
 
-      name: name,
+    /* Image */
 
-      desc: desc,
+    const imageFile =
+      document
+        .getElementById(
+          "editImageFile"
+        )
+        .files[0];
 
-      image: image
 
-    });
+    const imageUrl =
+      document
+        .getElementById(
+          "editImage"
+        )
+        .value
+        .trim();
+
+
+    if (imageFile) {
+
+      try {
+
+        category.image =
+          await fileToDataURL(
+            imageFile
+          );
+
+      } catch(error) {
+
+        alert(
+          "Unable to read the selected image."
+        );
+
+        return;
+      }
+
+    } else if (imageUrl) {
+
+      category.image =
+        imageUrl;
+
+    }
 
 
     saveStore(s);
+
+
+    closeEditModal();
 
 
     renderAdminCategories();
 
     renderAdminProducts();
 
-
-    /*
-      Clear fields
-    */
-    document.getElementById("catName").value = "";
-
-    document.getElementById("catDesc").value = "";
-
-    document.getElementById("catImage").value = "";
-
-    document.getElementById("catImageFile").value = "";
-
-    document.getElementById("catImagePreview").hidden = true;
-
-    document.getElementById("catImagePreview").src = "";
+    populateProductCategories();
 
 
-    alert("Category added successfully.");
+    alert(
+      "Category updated successfully."
+    );
 
+
+    return;
   }
 
 
-  /*
-    ADD PRODUCT
-  */
-  async function addProduct() {
 
-    const name =
-      document.getElementById("prodName").value.trim();
+  /*
+    =========================================
+    EDIT PRODUCT
+    =========================================
+  */
+
+  if (type === "product") {
+
+    const product =
+      (s.products || [])
+        .find(
+          function(p) {
+
+            return p.id === id;
+
+          }
+        );
+
+
+    if (!product) {
+
+      alert(
+        "Product not found."
+      );
+
+      return;
+    }
+
 
     const category =
-      document.getElementById("prodCategory").value;
+      document
+        .getElementById(
+          "editCategory"
+        )
+        .value;
+
 
     const price =
       Number(
-        document.getElementById("prodPrice").value || 0
+        document
+          .getElementById(
+            "editPrice"
+          )
+          .value
       );
-
-
-    const imageUrl =
-      document.getElementById("prodImage").value.trim();
-
-    const imageFile =
-      document.getElementById("prodImageFile").files[0];
 
 
     const sizes =
-      document.getElementById("prodSize").value;
+      document
+        .getElementById(
+          "editSize"
+        )
+        .value
+        .trim();
 
-    const desc =
-      document.getElementById("prodDesc").value;
 
     const stock =
       Number(
-        document.getElementById("prodStock").value || 0
+        document
+          .getElementById(
+            "editStock"
+          )
+          .value
       );
-
-
-    if (!name) {
-
-      alert("Enter product name.");
-
-      return;
-
-    }
 
 
     if (!category) {
 
-      alert("Select a category.");
+      alert(
+        "Please select a category."
+      );
 
       return;
-
     }
 
 
-    let image = imageUrl;
+    if (
+      isNaN(price) ||
+      price < 0
+    ) {
+
+      alert(
+        "Please enter a valid price."
+      );
+
+      return;
+    }
 
 
-    /*
-      If an uploaded image exists,
-      use uploaded image instead of URL.
-    */
+    if (
+      isNaN(stock) ||
+      stock < 0
+    ) {
+
+      alert(
+        "Please enter a valid stock quantity."
+      );
+
+      return;
+    }
+
+
+    product.name =
+      name;
+
+
+    product.category =
+      category;
+
+
+    product.price =
+      price;
+
+
+    product.sizes =
+      sizes;
+
+
+    product.desc =
+      desc;
+
+
+    product.stock =
+      stock;
+
+
+    /* Image */
+
+    const imageFile =
+      document
+        .getElementById(
+          "editImageFile"
+        )
+        .files[0];
+
+
+    const imageUrl =
+      document
+        .getElementById(
+          "editImage"
+        )
+        .value
+        .trim();
+
+
     if (imageFile) {
 
-      image = await fileToDataURL(imageFile);
+      try {
+
+        product.image =
+          await fileToDataURL(
+            imageFile
+          );
+
+      } catch(error) {
+
+        alert(
+          "Unable to read the selected image."
+        );
+
+        return;
+      }
+
+    } else if (imageUrl) {
+
+      product.image =
+        imageUrl;
 
     }
-
-
-    /*
-      Default product image.
-    */
-    if (!image) {
-
-      image =
-        "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=80";
-
-    }
-
-
-    const s = loadStore();
-
-
-    s.products.push({
-
-      id:
-        slug(name) +
-        "-" +
-        Date.now().toString().slice(-4),
-
-      name: name,
-
-      category: category,
-
-      price: price,
-
-      image: image,
-
-      sizes: sizes,
-
-      desc: desc,
-
-      stock: stock
-
-    });
 
 
     saveStore(s);
 
 
+    closeEditModal();
+
+
     renderAdminProducts();
 
 
-    /*
-      Clear fields
-    */
-    document.getElementById("prodName").value = "";
-
-    document.getElementById("prodPrice").value = "";
-
-    document.getElementById("prodImage").value = "";
-
-    document.getElementById("prodImageFile").value = "";
-
-    document.getElementById("prodSize").value = "";
-
-    document.getElementById("prodDesc").value = "";
-
-    document.getElementById("prodStock").value = "";
-
-    document.getElementById("prodImagePreview").hidden = true;
-
-    document.getElementById("prodImagePreview").src = "";
-
-
-    alert("Product added successfully.");
-
-  }
-
-
-  /*
-    START ADMIN
-  */
-  initAdmin();
-
-  /* ==========================================
-   RENDER CATEGORIES WITH EDIT + DELETE
-========================================== */
-
-function renderAdminCategories() {
-
-  const list = document.getElementById("categoryAdminList");
-
-  if (!list) return;
-
-  const s = loadStore();
-
-  if (!s.categories || s.categories.length === 0) {
-
-    list.innerHTML = `
-      <div class="form-card">
-        <p class="small">No categories added yet.</p>
-      </div>
-    `;
-
-    return;
-  }
-
-  list.innerHTML = s.categories.map(category => `
-
-    <div class="admin-list-card">
-
-      <img
-        src="${category.image}"
-        alt="${escapeAdminText(category.name)}"
-        onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"
-      >
-
-      <h3>${escapeAdminText(category.name)}</h3>
-
-      <p>
-        ${escapeAdminText(category.desc || "No description")}
-      </p>
-
-      <div class="admin-item-actions">
-
-        <button
-          class="edit-btn"
-          onclick="editCategory('${category.id}')"
-        >
-          ✏️ Edit
-        </button>
-
-        <button
-          class="delete-btn"
-          onclick="deleteCategory('${category.id}')"
-        >
-          🗑️ Delete
-        </button>
-
-      </div>
-
-    </div>
-
-  `).join("");
-}
-
-
-/* ==========================================
-   RENDER PRODUCTS WITH EDIT + DELETE
-========================================== */
-
-function renderAdminProducts() {
-
-  const list = document.getElementById("productAdminList");
-
-  if (!list) return;
-
-  const s = loadStore();
-
-  if (!s.products || s.products.length === 0) {
-
-    list.innerHTML = `
-      <div class="form-card">
-        <p class="small">No products added yet.</p>
-      </div>
-    `;
-
-    return;
-  }
-
-  list.innerHTML = s.products.map(product => {
-
-    const category = s.categories.find(
-      c => c.id === product.category
+    alert(
+      "Product updated successfully."
     );
 
-    return `
 
-      <div class="admin-list-card">
+    return;
+  }
 
-        <img
-          src="${product.image}"
-          alt="${escapeAdminText(product.name)}"
-          onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"
-        >
-
-        <h3>
-          ${escapeAdminText(product.name)}
-        </h3>
-
-        <p>
-          Category:
-          ${escapeAdminText(category ? category.name : "Unknown")}
-        </p>
-
-        <p>
-          Price:
-          $${Number(product.price || 0).toFixed(2)}
-        </p>
-
-        <p>
-          Stock:
-          ${product.stock || 0}
-        </p>
-
-        <div class="admin-item-actions">
-
-          <button
-            class="edit-btn"
-            onclick="editProduct('${product.id}')"
-          >
-            ✏️ Edit
-          </button>
-
-          <button
-            class="delete-btn"
-            onclick="deleteProduct('${product.id}')"
-          >
-            🗑️ Delete
-          </button>
-
-        </div>
-
-      </div>
-
-    `;
-
-  }).join("");
 }
 
 
-/* ==========================================
-   DELETE CATEGORY
-========================================== */
 
-function deleteCategory(id) {
+/* =====================================================
+   CLOSE EDIT MODAL
+===================================================== */
 
-  const s = loadStore();
+function closeEditModal() {
 
-  const category = s.categories.find(
-    c => c.id === id
+  const modal =
+    document.getElementById(
+      "editModal"
+    );
+
+
+  if (!modal) return;
+
+
+  modal.hidden =
+    true;
+
+
+  document.body.style.overflow =
+    "";
+
+
+  /* Clear fields */
+
+  document
+    .getElementById("editItemId")
+    .value = "";
+
+
+  document
+    .getElementById("editItemType")
+    .value = "";
+
+
+  document
+    .getElementById("editName")
+    .value = "";
+
+
+  document
+    .getElementById("editDesc")
+    .value = "";
+
+
+  document
+    .getElementById("editPrice")
+    .value = "";
+
+
+  document
+    .getElementById("editSize")
+    .value = "";
+
+
+  document
+    .getElementById("editStock")
+    .value = "";
+
+
+  document
+    .getElementById("editImage")
+    .value = "";
+
+
+  document
+    .getElementById("editImageFile")
+    .value = "";
+
+
+  document
+    .getElementById("editImagePreview")
+    .src = "";
+
+
+  document
+    .getElementById("editImagePreview")
+    .hidden = true;
+
+}
+
+
+
+/* =====================================================
+   CLOSE MODAL WHEN CLICKING OUTSIDE
+===================================================== */
+
+document
+  .getElementById("editModal")
+  .addEventListener(
+    "click",
+    function(event) {
+
+      if (
+        event.target ===
+        this
+      ) {
+
+        closeEditModal();
+
+      }
+
+    }
   );
 
-  if (!category) return;
 
-  const productsUsingCategory = s.products.filter(
-    p => p.category === id
-  );
 
-  let message =
-    `Delete category "${category.name}"?`;
+/* =====================================================
+   ESC KEY CLOSES MODAL
+===================================================== */
 
-  if (productsUsingCategory.length > 0) {
+document.addEventListener(
+  "keydown",
+  function(event) {
 
-    message +=
-      `\n\nWarning: ${productsUsingCategory.length} product(s) use this category.`;
+    if (
+      event.key === "Escape"
+    ) {
+
+      const modal =
+        document.getElementById(
+          "editModal"
+        );
+
+
+      if (
+        modal &&
+        !modal.hidden
+      ) {
+
+        closeEditModal();
+
+      }
+
+    }
 
   }
+);
 
-  message +=
-    `\n\nThis action cannot be undone.`;
 
-  if (!confirm(message)) return;
 
-  s.categories = s.categories.filter(
-    c => c.id !== id
-  );
+/* =====================================================
+   UPDATE LISTS
+===================================================== */
 
-  saveStore(s);
+function refreshAdminLists() {
 
   renderAdminCategories();
 
   renderAdminProducts();
 
-  alert("Category deleted successfully.");
+  populateProductCategories();
+
 }
 
 
-/* ==========================================
-   DELETE PRODUCT
-========================================== */
 
-function deleteProduct(id) {
+/* =====================================================
+   START ADMIN
+   IMPORTANT:
+   This is intentionally placed LAST so all custom
+   functions above are already available.
+===================================================== */
 
-  const s = loadStore();
+if (
+  typeof initAdmin === "function"
+) {
 
-  const product = s.products.find(
-    p => p.id === id
-  );
+  initAdmin();
 
-  if (!product) return;
-
-  const confirmDelete = confirm(
-    `Delete "${product.name}"?\n\nThis action cannot be undone.`
-  );
-
-  if (!confirmDelete) return;
-
-  s.products = s.products.filter(
-    p => p.id !== id
-  );
-
-  saveStore(s);
-
-  renderAdminProducts();
-
-  alert("Product deleted successfully.");
 }
 
 
-/* ==========================================
-   EDIT CATEGORY
-========================================== */
+/*
+   Run our lists after the page has loaded.
+*/
 
-function editCategory(id) {
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
 
-  const s = loadStore();
+    setTimeout(
+      function() {
 
-  const category = s.categories.find(
-    c => c.id === id
-  );
+        refreshAdminLists();
 
-  if (!category) return;
-
-
-  const newName = prompt(
-    "Category name:",
-    category.name
-  );
-
-  if (newName === null) return;
-
-  const name = newName.trim();
-
-  if (!name) {
-
-    alert("Category name cannot be empty.");
-
-    return;
+      },
+      100
+    );
 
   }
-
-
-  const newDesc = prompt(
-    "Category description:",
-    category.desc || ""
-  );
-
-  if (newDesc === null) return;
-
-
-  const newImage = prompt(
-    "Category image URL:\n\nLeave unchanged by pressing Cancel.",
-    category.image || ""
-  );
-
-
-  category.name = name;
-
-  category.desc = newDesc.trim();
-
-  if (newImage !== null && newImage.trim()) {
-
-    category.image = newImage.trim();
-
-  }
-
-
-  saveStore(s);
-
-  renderAdminCategories();
-
-  renderAdminProducts();
-
-  alert("Category updated successfully.");
-}
-
-
-/* ==========================================
-   EDIT PRODUCT
-========================================== */
-
-function editProduct(id) {
-
-  const s = loadStore();
-
-  const product = s.products.find(
-    p => p.id === id
-  );
-
-  if (!product) return;
-
-
-  const newName = prompt(
-    "Product name:",
-    product.name
-  );
-
-  if (newName === null) return;
-
-  if (!newName.trim()) {
-
-    alert("Product name cannot be empty.");
-
-    return;
-
-  }
-
-
-  const newPrice = prompt(
-    "Price (USD):",
-    product.price
-  );
-
-  if (newPrice === null) return;
-
-
-  const price = Number(newPrice);
-
-  if (isNaN(price) || price < 0) {
-
-    alert("Please enter a valid price.");
-
-    return;
-
-  }
-
-
-  const newSize = prompt(
-    "Sizes:",
-    product.sizes || ""
-  );
-
-  if (newSize === null) return;
-
-
-  const newDesc = prompt(
-    "Product description:",
-    product.desc || ""
-  );
-
-  if (newDesc === null) return;
-
-
-  const newStock = prompt(
-    "Stock quantity:",
-    product.stock || 0
-  );
-
-  if (newStock === null) return;
-
-
-  const stock = Number(newStock);
-
-  if (isNaN(stock) || stock < 0) {
-
-    alert("Please enter a valid stock quantity.");
-
-    return;
-
-  }
-
-
-  const newImage = prompt(
-    "Product image URL:\n\nLeave unchanged by pressing Cancel.",
-    product.image || ""
-  );
-
-
-  product.name = newName.trim();
-
-  product.price = price;
-
-  product.sizes = newSize.trim();
-
-  product.desc = newDesc.trim();
-
-  product.stock = stock;
-
-
-  if (newImage !== null && newImage.trim()) {
-
-    product.image = newImage.trim();
-
-  }
-
-
-  saveStore(s);
-
-  renderAdminProducts();
-
-  alert("Product updated successfully.");
-}
-
-
-/* ==========================================
-   PROTECT TEXT INSERTED INTO HTML
-========================================== */
-
-function escapeAdminText(text) {
-
-  return String(text || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
+);
 
 </script>
 
