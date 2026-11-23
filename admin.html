@@ -71,6 +71,65 @@
     .image-preview[hidden] {
       display: none;
     }
+
+    .admin-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-item-actions button {
+  border: none;
+  padding: 9px 14px;
+  border-radius: 7px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.edit-btn {
+  background: #1f86c9;
+  color: #fff;
+}
+
+.edit-btn:hover {
+  opacity: 0.85;
+}
+
+.delete-btn {
+  background: #dc3545;
+  color: #fff;
+}
+
+.delete-btn:hover {
+  opacity: 0.85;
+}
+
+.admin-list-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 12px;
+}
+
+.admin-list-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 9px;
+  margin-bottom: 10px;
+}
+
+.admin-list-card h3 {
+  margin: 5px 0;
+}
+
+.admin-list-card p {
+  margin: 5px 0;
+  color: var(--muted);
+}
   </style>
 </head>
 
@@ -710,6 +769,432 @@
     START ADMIN
   */
   initAdmin();
+
+  /* ==========================================
+   RENDER CATEGORIES WITH EDIT + DELETE
+========================================== */
+
+function renderAdminCategories() {
+
+  const list = document.getElementById("categoryAdminList");
+
+  if (!list) return;
+
+  const s = loadStore();
+
+  if (!s.categories || s.categories.length === 0) {
+
+    list.innerHTML = `
+      <div class="form-card">
+        <p class="small">No categories added yet.</p>
+      </div>
+    `;
+
+    return;
+  }
+
+  list.innerHTML = s.categories.map(category => `
+
+    <div class="admin-list-card">
+
+      <img
+        src="${category.image}"
+        alt="${escapeAdminText(category.name)}"
+        onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"
+      >
+
+      <h3>${escapeAdminText(category.name)}</h3>
+
+      <p>
+        ${escapeAdminText(category.desc || "No description")}
+      </p>
+
+      <div class="admin-item-actions">
+
+        <button
+          class="edit-btn"
+          onclick="editCategory('${category.id}')"
+        >
+          ✏️ Edit
+        </button>
+
+        <button
+          class="delete-btn"
+          onclick="deleteCategory('${category.id}')"
+        >
+          🗑️ Delete
+        </button>
+
+      </div>
+
+    </div>
+
+  `).join("");
+}
+
+
+/* ==========================================
+   RENDER PRODUCTS WITH EDIT + DELETE
+========================================== */
+
+function renderAdminProducts() {
+
+  const list = document.getElementById("productAdminList");
+
+  if (!list) return;
+
+  const s = loadStore();
+
+  if (!s.products || s.products.length === 0) {
+
+    list.innerHTML = `
+      <div class="form-card">
+        <p class="small">No products added yet.</p>
+      </div>
+    `;
+
+    return;
+  }
+
+  list.innerHTML = s.products.map(product => {
+
+    const category = s.categories.find(
+      c => c.id === product.category
+    );
+
+    return `
+
+      <div class="admin-list-card">
+
+        <img
+          src="${product.image}"
+          alt="${escapeAdminText(product.name)}"
+          onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"
+        >
+
+        <h3>
+          ${escapeAdminText(product.name)}
+        </h3>
+
+        <p>
+          Category:
+          ${escapeAdminText(category ? category.name : "Unknown")}
+        </p>
+
+        <p>
+          Price:
+          $${Number(product.price || 0).toFixed(2)}
+        </p>
+
+        <p>
+          Stock:
+          ${product.stock || 0}
+        </p>
+
+        <div class="admin-item-actions">
+
+          <button
+            class="edit-btn"
+            onclick="editProduct('${product.id}')"
+          >
+            ✏️ Edit
+          </button>
+
+          <button
+            class="delete-btn"
+            onclick="deleteProduct('${product.id}')"
+          >
+            🗑️ Delete
+          </button>
+
+        </div>
+
+      </div>
+
+    `;
+
+  }).join("");
+}
+
+
+/* ==========================================
+   DELETE CATEGORY
+========================================== */
+
+function deleteCategory(id) {
+
+  const s = loadStore();
+
+  const category = s.categories.find(
+    c => c.id === id
+  );
+
+  if (!category) return;
+
+  const productsUsingCategory = s.products.filter(
+    p => p.category === id
+  );
+
+  let message =
+    `Delete category "${category.name}"?`;
+
+  if (productsUsingCategory.length > 0) {
+
+    message +=
+      `\n\nWarning: ${productsUsingCategory.length} product(s) use this category.`;
+
+  }
+
+  message +=
+    `\n\nThis action cannot be undone.`;
+
+  if (!confirm(message)) return;
+
+  s.categories = s.categories.filter(
+    c => c.id !== id
+  );
+
+  saveStore(s);
+
+  renderAdminCategories();
+
+  renderAdminProducts();
+
+  alert("Category deleted successfully.");
+}
+
+
+/* ==========================================
+   DELETE PRODUCT
+========================================== */
+
+function deleteProduct(id) {
+
+  const s = loadStore();
+
+  const product = s.products.find(
+    p => p.id === id
+  );
+
+  if (!product) return;
+
+  const confirmDelete = confirm(
+    `Delete "${product.name}"?\n\nThis action cannot be undone.`
+  );
+
+  if (!confirmDelete) return;
+
+  s.products = s.products.filter(
+    p => p.id !== id
+  );
+
+  saveStore(s);
+
+  renderAdminProducts();
+
+  alert("Product deleted successfully.");
+}
+
+
+/* ==========================================
+   EDIT CATEGORY
+========================================== */
+
+function editCategory(id) {
+
+  const s = loadStore();
+
+  const category = s.categories.find(
+    c => c.id === id
+  );
+
+  if (!category) return;
+
+
+  const newName = prompt(
+    "Category name:",
+    category.name
+  );
+
+  if (newName === null) return;
+
+  const name = newName.trim();
+
+  if (!name) {
+
+    alert("Category name cannot be empty.");
+
+    return;
+
+  }
+
+
+  const newDesc = prompt(
+    "Category description:",
+    category.desc || ""
+  );
+
+  if (newDesc === null) return;
+
+
+  const newImage = prompt(
+    "Category image URL:\n\nLeave unchanged by pressing Cancel.",
+    category.image || ""
+  );
+
+
+  category.name = name;
+
+  category.desc = newDesc.trim();
+
+  if (newImage !== null && newImage.trim()) {
+
+    category.image = newImage.trim();
+
+  }
+
+
+  saveStore(s);
+
+  renderAdminCategories();
+
+  renderAdminProducts();
+
+  alert("Category updated successfully.");
+}
+
+
+/* ==========================================
+   EDIT PRODUCT
+========================================== */
+
+function editProduct(id) {
+
+  const s = loadStore();
+
+  const product = s.products.find(
+    p => p.id === id
+  );
+
+  if (!product) return;
+
+
+  const newName = prompt(
+    "Product name:",
+    product.name
+  );
+
+  if (newName === null) return;
+
+  if (!newName.trim()) {
+
+    alert("Product name cannot be empty.");
+
+    return;
+
+  }
+
+
+  const newPrice = prompt(
+    "Price (USD):",
+    product.price
+  );
+
+  if (newPrice === null) return;
+
+
+  const price = Number(newPrice);
+
+  if (isNaN(price) || price < 0) {
+
+    alert("Please enter a valid price.");
+
+    return;
+
+  }
+
+
+  const newSize = prompt(
+    "Sizes:",
+    product.sizes || ""
+  );
+
+  if (newSize === null) return;
+
+
+  const newDesc = prompt(
+    "Product description:",
+    product.desc || ""
+  );
+
+  if (newDesc === null) return;
+
+
+  const newStock = prompt(
+    "Stock quantity:",
+    product.stock || 0
+  );
+
+  if (newStock === null) return;
+
+
+  const stock = Number(newStock);
+
+  if (isNaN(stock) || stock < 0) {
+
+    alert("Please enter a valid stock quantity.");
+
+    return;
+
+  }
+
+
+  const newImage = prompt(
+    "Product image URL:\n\nLeave unchanged by pressing Cancel.",
+    product.image || ""
+  );
+
+
+  product.name = newName.trim();
+
+  product.price = price;
+
+  product.sizes = newSize.trim();
+
+  product.desc = newDesc.trim();
+
+  product.stock = stock;
+
+
+  if (newImage !== null && newImage.trim()) {
+
+    product.image = newImage.trim();
+
+  }
+
+
+  saveStore(s);
+
+  renderAdminProducts();
+
+  alert("Product updated successfully.");
+}
+
+
+/* ==========================================
+   PROTECT TEXT INSERTED INTO HTML
+========================================== */
+
+function escapeAdminText(text) {
+
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
 
 </script>
 
