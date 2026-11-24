@@ -1,55 +1,110 @@
-const KEY='amani_store_v1', CART='amani_cart_v1', ORDERS='amani_orders_v1';
-const seed={categories:[
-{id:'dry-flies',name:'Dry Flies',desc:'Surface flies for exciting top-water action.',image:'d:\Amani Web Pics\adams.jpg'},
-{id:'comoaraduns, spinners &sparkle duns',name:'Comoaraduns, Spinners &Sparkle Duns',desc:'Popular patterns for trout fishing.',image:'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=80'},
+const AMANI = {
+  sb: window.AMANI_SUPABASE,
+  money(v){ return `$${Number(v||0).toFixed(2)}`; },
+  esc(v=''){ return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); },
+  slug(v=''){ return v.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); },
+  placeholder(text='AMANI FISHING'){ return `https://placehold.co/900x700/eef3f0/0c4a3c?text=${encodeURIComponent(text)}`; },
+  async categories(){ const {data,error}=await this.sb.from('categories').select('*').order('name'); if(error) throw error; return data||[]; },
+  async products(){ const {data,error}=await this.sb.from('products').select('*,categories(id,name,slug)').order('created_at',{ascending:false}); if(error) throw error; return data||[]; },
+  async product(id){ const {data,error}=await this.sb.from('products').select('*,categories(id,name,slug)').eq('id',id).single(); if(error) throw error; return data; },
+  async category(slug){ const {data,error}=await this.sb.from('categories').select('*').eq('slug',slug).single(); if(error) throw error; return data; },
+  cart(){ return JSON.parse(localStorage.getItem('amani_cart')||'[]'); },
+  saveCart(c){ localStorage.setItem('amani_cart',JSON.stringify(c)); this.updateCartCount(); },
+  updateCartCount(){ const n=this.cart().reduce((a,x)=>a+Number(x.qty||1),0); document.querySelectorAll('[data-cart-count]').forEach(e=>e.textContent=n); },
+  addCart(p,qty=1){ const c=this.cart(); const old=c.find(x=>x.id===p.id); if(old) old.qty+=qty; else c.push({id:p.id,name:p.name,price:Number(p.price),image_url:p.image_url,qty}); this.saveCart(c); alert(`${p.name} added to cart.`); },
+  removeCart(id){ this.saveCart(this.cart().filter(x=>x.id!==id)); },
+  total(){ return this.cart().reduce((a,x)=>a+Number(x.price)*Number(x.qty),0); },
+  async renderHeader(){
+    const el=document.querySelector('#site-header'); if(!el) return;
+    el.innerHTML=`<header class="site-header"><div class="container nav">
+      <a class="logo" href="index.html">AMANI<span>FISHING WHOLESALE</span></a>
+      <nav class="nav-links" id="mainNav">
+        <a href="index.html">Home</a><a href="shop.html">Shop</a><a href="about.html">About</a><a href="contact.html">Contact</a>
+      </nav>
+      <div class="nav-actions"><button class="btn btn-light" id="openCart">Cart (<span data-cart-count>0</span>)</button><button class="menu-btn" id="menuBtn">☰</button></div>
+    </div></header>`;
+    document.querySelector('#menuBtn').onclick=()=>document.querySelector('#mainNav').classList.toggle('open');
+    document.querySelector('#openCart').onclick=()=>this.openCart();
+    this.updateCartCount();
+  },
+  async renderFooter(){
+    const el=document.querySelector('#site-footer'); if(!el)return;
+    el.innerHTML=`<footer class="footer"><div class="container footer-grid">
+      <div><div class="logo" style="color:#fff">AMANI<span style="color:#d7a83e">FISHING WHOLESALE</span></div><p>Quality fishing flies for anglers, guides and wholesale buyers.</p></div>
+      <div><h3>Shop</h3><p><a href="shop.html">All Flies</a></p><p><a href="shop.html">Categories</a></p><p><a href="checkout.html">Checkout</a></p></div>
+      <div><h3>Contact</h3><p>Replace this section with your phone, WhatsApp and email.</p><p><a href="admin.html">Admin</a></p></div>
+    </div><div class="container footer-bottom">© ${new Date().getFullYear()} AMANI Fishing Wholesale. All rights reserved.</div></footer>`;
+  },
+  cartMarkup(){
+    const c=this.cart();
+    return `<div class="cart-drawer" id="cartDrawer"><div class="cart-overlay" id="cartOverlay"></div><aside class="cart-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2>Your Cart</h2><button class="close" id="closeCart">×</button></div>
+      <div class="cart-items">${c.length?c.map(x=>`<div class="cart-item"><img src="${x.image_url||this.placeholder(x.name)}"><div><strong>${this.esc(x.name)}</strong><div class="muted">${this.money(x.price)} × ${x.qty}</div><button class="btn btn-danger btn-sm remove-cart" data-id="${x.id}">Remove</button></div><strong>${this.money(x.price*x.qty)}</strong></div>`).join(''):`<div class="empty">Your cart is empty.</div>`}</div>
+      <div style="border-top:1px solid var(--line);padding-top:18px"><div style="display:flex;justify-content:space-between;font-size:20px;font-weight:900"><span>Total</span><span>${this.money(this.total())}</span></div><a class="btn btn-primary" style="width:100%;margin-top:14px" href="checkout.html">Checkout</a></div>
+    </aside></div>`;
+  },
+  openCart(){
+    let d=document.querySelector('#cartDrawer'); if(!d){document.body.insertAdjacentHTML('beforeend',this.cartMarkup());d=document.querySelector('#cartDrawer');}
+    d.classList.add('open'); document.querySelector('#closeCart').onclick=()=>d.classList.remove('open'); document.querySelector('#cartOverlay').onclick=()=>d.classList.remove('open');
+    document.querySelectorAll('.remove-cart').forEach(b=>b.onclick=()=>{this.removeCart(b.dataset.id);this.openCart();});
+  }
+};
 
+document.addEventListener('DOMContentLoaded',async()=>{
+  if(!AMANI.sb){console.error('Supabase is not configured.');return;}
+  await AMANI.renderHeader(); await AMANI.renderFooter();
+  if(document.querySelector('[data-home-categories]')) loadHome();
+  if(document.querySelector('[data-home-products]')) loadHomeProducts();
+  if(document.querySelector('#shopGrid')) loadShop();
+  if(document.querySelector('#productDetail')) loadProductPage();
+  if(document.querySelector('#categoryPage')) loadCategoryPage();
+  AMANI.updateCartCount();
+});
 
-{id:'nymphs',name:'Nymph Flies',desc:'Reliable patterns for subsurface fishing.',image:'https://images.unsplash.com/photo-1544550285-f813152fb2f5?auto=format&fit=crop&w=900&q=80'},
-{id:'streamers',name:'Streamers',desc:'Predator patterns designed for movement.',image:'https://images.unsplash.com/photo-1535024966843-1f5d2b2b6d8c?auto=format&fit=crop&w=900&q=80'},
-{id:'saltwater',name:'Saltwater Flies',desc:'Strong patterns for coastal and saltwater species.',image:'https://images.unsplash.com/photo-1534766555764-ce878a5e3a2b?auto=format&fit=crop&w=900&q=80'},
-{id:'trout',name:'Trout Flies',desc:'Popular patterns for trout fishing.',image:'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=80'},
-{id:'bass',name:'Bass Flies',desc:'Patterns made for aggressive bass.',image:'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=900&q=80'}
-],products:[
-{id:'royal-wulff',name:'Royal Wulff',category:'dry-flies',price:650,image:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=80',sizes:'8, 10, 12, 14',stock:40,desc:'A classic high-visibility dry fly pattern, ideal for surface fishing and easy tracking in moving water.'},
-{id:'olive-nymph',name:'Olive Bead Head Nymph',category:'nymphs',price:550,image:'https://images.unsplash.com/photo-1544550285-f813152fb2f5?auto=format&fit=crop&w=900&q=80',sizes:'10, 12, 14, 16',stock:60,desc:'A versatile weighted nymph for subsurface presentations in rivers and streams.'},
-{id:'woolly-bugger',name:'Woolly Bugger Streamer',category:'streamers',price:700,image:'https://images.unsplash.com/photo-1535024966843-1f5d2b2b6d8c?auto=format&fit=crop&w=900&q=80',sizes:'6, 8, 10',stock:35,desc:'An adaptable streamer with strong movement, suitable for a wide range of predatory fish.'},
-{id:'clouser',name:'Clouser Minnow',category:'saltwater',price:850,image:'https://images.unsplash.com/photo-1534766555764-ce878a5e3a2b?auto=format&fit=crop&w=900&q=80',sizes:'2, 4, 6, 8',stock:25,desc:'A proven baitfish imitation for saltwater and aggressive species.'},
-{id:'elk-hair-caddis',name:'Elk Hair Caddis',category:'trout',price:600,image:'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=80',sizes:'10, 12, 14, 16',stock:45,desc:'A buoyant caddis imitation that works well on rivers and streams.'},
-{id:'poppers',name:'Bass Popper',category:'bass',price:900,image:'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=900&q=80',sizes:'2, 4, 6',stock:30,desc:'A surface popper designed to create attraction and trigger explosive bass strikes.'}
-]};
-function loadStore(){return JSON.parse(localStorage.getItem(KEY)||'null')||seed}
-function saveStore(s){localStorage.setItem(KEY,JSON.stringify(s))}
-function getCart(){return JSON.parse(localStorage.getItem(CART)||'[]')}
-function saveCart(c){localStorage.setItem(CART,JSON.stringify(c));updateCartCount()}
-function money(n){return 'USD '+Number(n).toLocaleString()}
-function updateCartCount(){const e=document.getElementById('cartCount');if(e)e.textContent=getCart().reduce((a,b)=>a+b.qty,0)}
-function toggleMenu(){document.getElementById('mainNav')?.classList.toggle('open')}
-function catName(id){return loadStore().categories.find(c=>c.id===id)?.name||id}
-function productCard(p){return `<article class="product-card"><a class="product-image" href="product.html?id=${encodeURIComponent(p.id)}"><img src="${p.image}" alt="${p.name}" loading="lazy"></a><div class="product-info"><div class="product-meta">${catName(p.category)}</div><h3><a href="product.html?id=${encodeURIComponent(p.id)}">${p.name}</a></h3><div class="price">${money(p.price)}</div><button class="btn primary add-btn" onclick="addToCart('${p.id}')">Add to cart</button></div></article>`}
-function categoryCard(c){return `<a class="category-card" style="background-image:url('${c.image}')" href="category.html?id=${encodeURIComponent(c.id)}"><div><h3>${c.name}</h3><p>${c.desc}</p></div></a>`}
-function renderHome(){const s=loadStore();document.getElementById('homeCategories').innerHTML=s.categories.slice(0,6).map(categoryCard).join('');document.getElementById('featuredProducts').innerHTML=s.products.slice(0,8).map(productCard).join('');updateCartCount()}
-function renderCategories(){document.getElementById('allCategories').innerHTML=loadStore().categories.map(categoryCard).join('');updateCartCount()}
-function initShop(){const s=loadStore();document.getElementById('categoryFilter').innerHTML='<option value="">All categories</option>'+s.categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');renderShop()}
-function renderShop(){const s=loadStore(),q=(document.getElementById('search')?.value||'').toLowerCase(),cat=document.getElementById('categoryFilter')?.value||'';const ps=s.products.filter(p=>(!cat||p.category===cat)&&(!q||(p.name+' '+p.desc).toLowerCase().includes(q)));document.getElementById('shopGrid').innerHTML=ps.length?ps.map(productCard).join(''):'<div class="empty">No products found.</div>';updateCartCount()}
-function renderCategoryPage(){const id=new URLSearchParams(location.search).get('id'),s=loadStore(),c=s.categories.find(x=>x.id===id)||s.categories[0];document.getElementById('categoryHero').innerHTML=`<div class="container"><span class="eyebrow">CATEGORY</span><h1>${c.name}</h1><p>${c.desc}</p></div>`;const ps=s.products.filter(p=>p.category===c.id);document.getElementById('categoryProducts').innerHTML=ps.length?ps.map(productCard).join(''):'<div class="empty">Products coming soon.</div>';updateCartCount()}
-function renderProductPage(){const id=new URLSearchParams(location.search).get('id'),p=loadStore().products.find(x=>x.id===id)||loadStore().products[0];document.title=p.name+' | Amani Fishing Wholesale';document.getElementById('productDetail').innerHTML=`<img class="big-image" src="${p.image}" alt="${p.name}"><div class="detail-copy"><span class="eyebrow">${catName(p.category)}</span><h1>${p.name}</h1><div class="price">${money(p.price)}</div><p class="description">${p.desc}</p><ul class="detail-list"><li><b>Sizes:</b> ${p.sizes||'Available on request'}</li><li><b>Stock:</b> ${p.stock>0?'Available':'Out of stock'}</li><li><b>Wholesale:</b> Bulk quantities available</li></ul><div class="qty-row"><input id="detailQty" class="input" type="number" min="1" max="${p.stock||999}" value="1"><button class="btn primary" onclick="addDetailToCart('${p.id}')">Add to cart</button></div></div>`;updateCartCount()}
-function addToCart(id){const s=loadStore(),p=s.products.find(x=>x.id===id),c=getCart(),item=c.find(x=>x.id===id);if(item)item.qty++;else c.push({id,qty:1});saveCart(c);alert(p.name+' added to your cart.')}
-function addDetailToCart(id){const qty=Math.max(1,Number(document.getElementById('detailQty').value||1)),c=getCart(),item=c.find(x=>x.id===id);if(item)item.qty+=qty;else c.push({id,qty});saveCart(c);location.href='cart.html'}
-function renderCart(){const s=loadStore(),c=getCart(),box=document.getElementById('cartItems');if(!c.length){box.innerHTML='<div class="empty">Your cart is empty.<br><a class="text-link" href="shop.html">Continue shopping →</a></div>';document.getElementById('cartTotal').textContent='Total: USD 0';return}let total=0;box.innerHTML=c.map(item=>{const p=s.products.find(x=>x.id===item.id);if(!p)return'';total+=p.price*item.qty;return `<div class="cart-item"><img src="${p.image}" alt="${p.name}"><div><h3>${p.name}</h3><div class="product-meta">${money(p.price)} each · Qty ${item.qty}</div></div><div><b>${money(p.price*item.qty)}</b><button class="btn outline remove" onclick="removeFromCart('${p.id}')">Remove</button></div></div>`}).join('');document.getElementById('cartTotal').textContent='Total: '+money(total);updateCartCount()}
-function removeFromCart(id){saveCart(getCart().filter(x=>x.id!==id));renderCart()}
-function submitOrder(){const c=getCart();if(!c.length)return alert('Your cart is empty.');const name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim();if(!name||!phone)return alert('Please enter your name and phone/WhatsApp number.');const s=loadStore(),items=c.map(x=>{const p=s.products.find(y=>y.id===x.id);return {name:p.name,qty:x.qty,price:p.price}}),order={id:'AMN-'+Date.now().toString().slice(-7),date:new Date().toLocaleString(),name,phone,email:document.getElementById('customerEmail').value,notes:document.getElementById('customerNotes').value,items,total:items.reduce((a,x)=>a+x.qty*x.price,0),status:'New'};const orders=JSON.parse(localStorage.getItem(ORDERS)||'[]');orders.unshift(order);localStorage.setItem(ORDERS,JSON.stringify(orders));localStorage.removeItem(CART);alert('Thank you! Your order '+order.id+' has been received. We will contact you to confirm stock and payment.');location.href='index.html'}
-function sendEnquiry(e){e.preventDefault();const n=document.getElementById('enqName').value,p=document.getElementById('enqPhone').value,m=document.getElementById('enqMessage').value;const wa='254700000000';const text=encodeURIComponent(`Hello Amani Fishing Wholesale. My name is ${n}. ${m} ${p?'My phone is '+p:''}`);location.href=`https://wa.me/${wa}?text=${text}`}
-function initAdmin(){if(sessionStorage.getItem('amani_admin')==='1')showAdmin();updateCartCount()}
-function adminLogin(){if(document.getElementById('adminUser').value==='admin'&&document.getElementById('adminPass').value==='amani123'){sessionStorage.setItem('amani_admin','1');showAdmin()}else alert('Incorrect demo login.')}
-function adminLogout(){sessionStorage.removeItem('amani_admin');location.reload()}
-function showAdmin(){document.getElementById('loginPanel').hidden=true;document.getElementById('adminPanel').hidden=false;renderAdminCategories();renderAdminProducts();renderAdminOrders()}
-function showAdminTab(id){document.querySelectorAll('.admin-tab').forEach(x=>x.hidden=true);document.getElementById(id).hidden=false}
-function slug(s){return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
-function addCategory(){const n=document.getElementById('catName').value.trim();if(!n)return alert('Enter a category name.');const s=loadStore();s.categories.push({id:slug(n)+'-'+Date.now().toString().slice(-4),name:n,desc:document.getElementById('catDesc').value,image:document.getElementById('catImage').value||'https://images.unsplash.com/photo-1544550285-f813152fb2f5?auto=format&fit=crop&w=900&q=80'});saveStore(s);renderAdminCategories();renderAdminProducts();alert('Category added.')}
-function deleteCategory(id){const s=loadStore();s.categories=s.categories.filter(x=>x.id!==id);s.products=s.products.filter(x=>x.category!==id);saveStore(s);renderAdminCategories();renderAdminProducts()}
-function renderAdminCategories(){const s=loadStore();document.getElementById('categoryAdminList').innerHTML='<div class="admin-list">'+s.categories.map(c=>`<div class="admin-row"><span><b>${c.name}</b><br><small>${c.desc}</small></span><button onclick="deleteCategory('${c.id}')">Delete</button></div>`).join('')+'</div>'}
-function addProduct(){const n=document.getElementById('prodName').value.trim(),cat=document.getElementById('prodCategory').value;if(!n||!cat)return alert('Enter product name and category.');const s=loadStore();s.products.push({id:slug(n)+'-'+Date.now().toString().slice(-4),name:n,category:cat,price:Number(document.getElementById('prodPrice').value||0),image:document.getElementById('prodImage').value||'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=80',sizes:document.getElementById('prodSize').value,desc:document.getElementById('prodDesc').value,stock:Number(document.getElementById('prodStock').value||0)});saveStore(s);renderAdminProducts();alert('Product added.')}
-function deleteProduct(id){const s=loadStore();s.products=s.products.filter(x=>x.id!==id);saveStore(s);renderAdminProducts()}
-function renderAdminProducts(){const s=loadStore(),sel=document.getElementById('prodCategory');if(!sel)return;sel.innerHTML=s.categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');document.getElementById('productAdminList').innerHTML='<div class="admin-list">'+s.products.map(p=>`<div class="admin-row"><span><b>${p.name}</b><br><small>${catName(p.category)} · ${money(p.price)} · Stock ${p.stock}</small></span><button onclick="deleteProduct('${p.id}')">Delete</button></div>`).join('')+'</div>'}
-function renderAdminOrders(){const o=JSON.parse(localStorage.getItem(ORDERS)||'[]'),box=document.getElementById('ordersList');if(!o.length){box.innerHTML='<div class="empty">No orders yet.</div>';return}box.innerHTML=o.map(x=>`<div class="order-card"><b>${x.id}</b> · ${x.status}<br><strong>${x.name}</strong> · ${x.phone}<br>${x.email||''}<pre>${x.items.map(i=>`${i.name} × ${i.qty} — ${money(i.qty*i.price)}`).join('\\n')}\\nTotal: ${money(x.total)}\\nNotes: ${x.notes||'—'}</pre></div>`).join('')}
-updateCartCount();
+async function loadHome(){
+  const el=document.querySelector('[data-home-categories]');
+  try{
+    const cats=await AMANI.categories();
+    el.innerHTML=cats.slice(0,8).map(c=>`<a class="card category-card" href="category.html?slug=${encodeURIComponent(c.slug)}"><img src="${c.image_url||AMANI.placeholder(c.name)}"><div class="card-body"><h3>${AMANI.esc(c.name)}</h3><p class="muted">${AMANI.esc(c.description||'Explore this fly collection.')}</p></div></a>`).join('')||'<div class="empty">No categories yet. Add categories from Admin.</div>';
+  }catch(e){el.innerHTML=`<div class="notice error">${AMANI.esc(e.message)}</div>`}
+}
+async function loadHomeProducts(){
+  const el=document.querySelector('[data-home-products]');
+  try{
+    const ps=(await AMANI.products()).filter(p=>p.featured||true).slice(0,8);
+    el.innerHTML=ps.map(productCard).join('')||'<div class="empty">No products yet.</div>';
+  }catch(e){el.innerHTML=`<div class="notice error">${AMANI.esc(e.message)}</div>`}
+}
+function productCard(p){
+  return `<article class="card product-card"><a href="product.html?id=${p.id}"><img src="${p.image_url||AMANI.placeholder(p.name)}" alt="${AMANI.esc(p.name)}"></a><div class="card-body"><span class="badge">${AMANI.esc(p.categories?.name||'Fishing Fly')}</span><h3>${AMANI.esc(p.name)}</h3><div class="product-meta"><span class="price">${AMANI.money(p.price)}</span><button class="btn btn-primary btn-sm add-product" data-id="${p.id}">Add</button></div></div></article>`;
+}
+async function loadShop(){
+  const grid=document.querySelector('#shopGrid'), search=document.querySelector('#shopSearch'), filter=document.querySelector('#shopCategory');
+  const [ps,cats]=await Promise.all([AMANI.products(),AMANI.categories()]);
+  filter.innerHTML='<option value="">All categories</option>'+cats.map(c=>`<option value="${c.id}">${AMANI.esc(c.name)}</option>`).join('');
+  function draw(){
+    const q=search.value.toLowerCase().trim(), cat=filter.value;
+    const list=ps.filter(p=>(!q||p.name.toLowerCase().includes(q)||String(p.description||'').toLowerCase().includes(q))&&(!cat||p.category_id===cat));
+    grid.innerHTML=list.map(productCard).join('')||'<div class="empty">No matching flies found.</div>';
+    grid.querySelectorAll('.add-product').forEach(b=>b.onclick=()=>{const p=ps.find(x=>x.id===b.dataset.id);AMANI.addCart(p)});
+  }
+  search.oninput=draw;filter.onchange=draw;draw();
+}
+async function loadProductPage(){
+  const box=document.querySelector('#productDetail'), id=new URLSearchParams(location.search).get('id');
+  if(!id){box.innerHTML='<div class="notice error">Product not found.</div>';return}
+  try{
+    const p=await AMANI.product(id);
+    box.innerHTML=`<div class="product-detail-image"><img src="${p.image_url||AMANI.placeholder(p.name)}" alt="${AMANI.esc(p.name)}"></div><div><span class="badge">${AMANI.esc(p.categories?.name||'Fishing Fly')}</span><h1>${AMANI.esc(p.name)}</h1><div class="price" style="font-size:28px">${AMANI.money(p.price)}</div><p>${AMANI.esc(p.description||'Quality fishing fly from AMANI Fishing Wholesale.')}</p><p><strong>Sizes:</strong> ${AMANI.esc(p.sizes||'Contact us for available sizes')}</p><p><strong>Stock:</strong> ${p.stock}</p><div class="qty"><button id="minus">−</button><input class="field" id="qty" type="number" min="1" value="1"><button id="plus">+</button></div><button class="btn btn-primary" id="addDetail">Add to Cart</button></div>`;
+    const q=document.querySelector('#qty');document.querySelector('#minus').onclick=()=>q.value=Math.max(1,+q.value-1);document.querySelector('#plus').onclick=()=>q.value=+q.value+1;document.querySelector('#addDetail').onclick=()=>AMANI.addCart(p,+q.value);
+  }catch(e){box.innerHTML=`<div class="notice error">${AMANI.esc(e.message)}</div>`}
+}
+async function loadCategoryPage(){
+  const box=document.querySelector('#categoryPage'),slug=new URLSearchParams(location.search).get('slug');
+  try{
+    const [c,ps]=await Promise.all([AMANI.category(slug),AMANI.products()]);
+    const list=ps.filter(p=>p.category_id===c.id);
+    box.innerHTML=`<div class="section-head"><div><div class="eyebrow">Collection</div><h1>${AMANI.esc(c.name)}</h1><p class="muted">${AMANI.esc(c.description||'')}</p></div></div><div class="grid grid-4">${list.map(productCard).join('')||'<div class="empty">No products in this category yet.</div>'}</div>`;
+    box.querySelectorAll('.add-product').forEach(b=>b.onclick=()=>AMANI.addCart(ps.find(x=>x.id===b.dataset.id)));
+  }catch(e){box.innerHTML=`<div class="notice error">${AMANI.esc(e.message)}</div>`}
+}

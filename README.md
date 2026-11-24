@@ -1,30 +1,23 @@
-# Amani Fishing Wholesale
+# AMANI Fishing Wholesale
 
-A responsive fishing-fly e-commerce starter website.
+## Setup
 
-## Included
-- Home page
-- Shop with search and category filter
-- Dedicated category pages
-- Product detail pages
-- Product image click → full product description
-- Shopping cart
-- Checkout/order capture
-- WhatsApp enquiry
-- About and Contact pages
-- Admin dashboard
-- Add/delete categories
-- Add/delete products
-- View locally captured orders
-
-## Demo admin
-Username: `admin`
-Password: `amani123`
+1. Create a Supabase project.
+2. Open Supabase SQL Editor and run `database.sql`.
+3. In Supabase Authentication, create an admin email/password user.
+4. Copy that user's UUID.
+5. Run:
+   `insert into public.admin_users(user_id) values ('YOUR-UUID');`
+6. Open `supabase-config.js` and replace:
+   - `YOUR-PROJECT`
+   - `YOUR-SUPABASE-ANON-KEY`
+7. Upload the whole folder to Vercel.
+8. Open `/admin.html` and log in.
 
 ## Important
-This version stores products, cart data and demo orders in browser localStorage. It is ideal for a front-end prototype/demo.
 
-For a production website, replace the demo admin/localStorage layer with a secure backend/database such as Supabase/Firebase/Node + PostgreSQL, add secure authentication, server-side order processing, image storage and a real payment gateway (e.g. M-Pesa/card).
+Only use the Supabase `anon` public key in the browser. Never expose a `service_role` key.
 
-## Run
-Open `index.html` in a browser, or deploy the folder to Vercel/Netlify.
+Product and category images uploaded by the admin are stored in Supabase Storage, not browser localStorage. Therefore the catalogue and images are available across devices.
+
+The shopping cart is intentionally stored in the customer's browser. Orders are stored centrally in Supabase.
