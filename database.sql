@@ -141,3 +141,5 @@ using (
 -- After creating an admin account in Supabase Authentication > Users,
 -- run:
 -- insert into public.admin_users(user_id) values ('AUTH-USER-UUID-HERE');
+INSERT INTO public.admin_users (user_id)
+VALUES ('343c72c7-8d80-4d18-909a-707a76553a20');
