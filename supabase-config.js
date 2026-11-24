@@ -1,7 +1,7 @@
 // AMANI FISHING WHOLESALE
 // Replace these two values with your Supabase project values.
 // Never put a Supabase service_role key in this file.
-window.AMANI_SUPABASE_URL = "https://dzanto143's Project.supabase.co";
+window.AMANI_SUPABASE_URL = "https://jxxbfnjhbgsopixvrzow.supabase.co";
 window.AMANI_SUPABASE_ANON_KEY = "jxxbfnjhbgsopixvrzow";
 
 window.AMANI_SUPABASE =
