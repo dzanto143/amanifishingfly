@@ -138,6 +138,5 @@ using (
   and exists (select 1 from public.admin_users a where a.user_id = auth.uid())
 );
 
--- After creating an admin account in Supabase Authentication > Users,
--- run:
--- insert into public.admin_users(user_id) values ('AUTH-USER-UUID-HERE');
+insert into public.admin_users(user_id)
+values ('prj_xMmooTPK38Mfn1324yy9xM52659h');
