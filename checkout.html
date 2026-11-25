@@ -1,62 +1,262 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Checkout | AMANI Fishing Wholesale</title>
-        <link rel="stylesheet" href="style.css">
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <script src="supabase-config.js"></script>
-    </head>
-    <body>
-        <div id="site-header"></div>
-        <main class="section">
-            <div class="container">
-                <div class="section-head">
-                    <div>
-                        <div class="eyebrow">Order</div>
-                        <h1>Checkout</h1>
-                    </div>
-                </div>
-                <div id="orderMsg"></div>
-                <div class="grid grid-2">
-                    <div class="card card-body">
-                        <h2>Your order</h2>
-                        <div id="checkoutItems"></div>
-                        <div style="display:flex;justify-content:space-between;margin-top:20px;font-size:22px;font-weight:900">
-                            <span>Total</span>
-                            <span id="checkoutTotal">$0.00</span>
-                        </div>
-                    </div>
-                    <form id="checkoutForm" class="card card-body">
-                        <h2>Delivery details</h2>
-                        <div class="form-group">
-                            <label>Full name</label>
-                            <input name="customer_name" class="field" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone</label>
-                            <input name="phone" class="field" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input name="email" class="field" type="email">
-                        </div>
-                        <div class="form-group">
-                            <label>Delivery address</label>
-                            <textarea name="address" class="field" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Notes</label>
-                            <textarea name="notes" class="field"></textarea>
-                        </div>
-                        <button class="btn btn-primary" style("width:100%")>Place Order</button>
-                    </form>
+<head>
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="description"
+        content="Checkout and place your fishing fly wholesale order with Amiani's Fly Wholesalers. All prices are in USD per dozen."
+    >
+
+    <meta
+        name="keywords"
+        content="Amiani's Fly Wholesalers, fishing flies, wholesale fishing flies, fly fishing, checkout, fishing fly orders"
+    >
+
+    <title>Checkout | Amiani's Fly Wholesalers</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Supabase -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        defer
+    ></script>
+
+    <!-- Supabase configuration -->
+    <script
+        src="supabase-config.js"
+        defer
+    ></script>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <div id="site-header"></div>
+
+    <!-- Checkout -->
+    <main class="section">
+        <div class="container">
+
+            <div class="section-head">
+                <div>
+                    <div class="eyebrow">Order</div>
+
+                    <h1>Checkout</h1>
+
+                    <p class="muted">
+                        Complete your delivery details to place your order.
+                        All prices are in USD per dozen.
+                    </p>
                 </div>
             </div>
-        </main>
-        <div id="site-footer"></div>
-        <script src="app.js"></script>
-        <script src="checkout.js"></script>
-    </body>
+
+            <!-- Order message -->
+            <div id="orderMsg"></div>
+
+            <div class="grid grid-2">
+
+                <!-- ORDER SUMMARY -->
+                <div class="card card-body">
+
+                    <h2>Your Order</h2>
+
+                    <p class="muted">
+                        Each quantity represents one dozen (12 flies).
+                    </p>
+
+                    <div id="checkoutItems">
+                        <div class="notice">
+                            Loading your order...
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div
+                        style="
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:center;
+                            gap:20px;
+                            margin-top:20px;
+                            padding-top:20px;
+                            border-top:1px solid var(--border,#e5e7eb);
+                            font-size:22px;
+                            font-weight:900;
+                        "
+                    >
+                        <span>Total</span>
+
+                        <span id="checkoutTotal">
+                            $0.00
+                        </span>
+                    </div>
+
+                    <p
+                        class="muted"
+                        style="margin-top:10px;font-size:14px;"
+                    >
+                        Final total is calculated from the quantities of
+                        dozens selected in your cart.
+                    </p>
+
+                </div>
+
+
+                <!-- DELIVERY DETAILS -->
+                <form
+                    id="checkoutForm"
+                    class="card card-body"
+                >
+
+                    <h2>Delivery Details</h2>
+
+                    <!-- Full Name -->
+                    <div class="form-group">
+
+                        <label for="customerName">
+                            Full name
+                        </label>
+
+                        <input
+                            id="customerName"
+                            name="customer_name"
+                            class="field"
+                            type="text"
+                            autocomplete="name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Phone -->
+                    <div class="form-group">
+
+                        <label for="customerPhone">
+                            Phone
+                        </label>
+
+                        <input
+                            id="customerPhone"
+                            name="phone"
+                            class="field"
+                            type="tel"
+                            autocomplete="tel"
+                            placeholder="+254..."
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Email -->
+                    <div class="form-group">
+
+                        <label for="customerEmail">
+                            Email
+                        </label>
+
+                        <input
+                            id="customerEmail"
+                            name="email"
+                            class="field"
+                            type="email"
+                            autocomplete="email"
+                            placeholder="you@example.com"
+                        >
+
+                    </div>
+
+
+                    <!-- Delivery Address -->
+                    <div class="form-group">
+
+                        <label for="deliveryAddress">
+                            Delivery address
+                        </label>
+
+                        <textarea
+                            id="deliveryAddress"
+                            name="address"
+                            class="field"
+                            rows="4"
+                            autocomplete="street-address"
+                            placeholder="Enter your complete delivery address"
+                            required
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- Notes -->
+                    <div class="form-group">
+
+                        <label for="orderNotes">
+                            Notes
+                        </label>
+
+                        <textarea
+                            id="orderNotes"
+                            name="notes"
+                            class="field"
+                            rows="3"
+                            placeholder="Any special delivery instructions?"
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- Place Order -->
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        style="width:100%;"
+                    >
+                        Place Order
+                    </button>
+
+                    <p
+                        class="muted"
+                        style="
+                            margin-top:12px;
+                            font-size:13px;
+                            text-align:center;
+                        "
+                    >
+                        By placing this order, you confirm that your
+                        delivery information is correct.
+                    </p>
+
+                </form>
+
+            </div>
+
+        </div>
+    </main>
+
+
+    <!-- Footer -->
+    <div id="site-footer"></div>
+
+
+    <!-- Storefront application -->
+    <script
+        src="app.js"
+        defer
+    ></script>
+
+    <!-- Checkout application -->
+    <script
+        src="checkout.js"
+        defer
+    ></script>
+
+</body>
 </html>

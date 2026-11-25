@@ -1,69 +1,326 @@
+```html
 <!doctype html>
 <html lang="en">
-  <head>
+
+<head>
+
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>AMANI Fishing Wholesale</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-  </head>
-  <body>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="description"
+        content="Amiani's Fly Wholesalers supplies quality fishing flies for anglers, guides, fly shops and wholesale buyers. Browse fishing fly categories and order online."
+    >
+
+    <meta
+        name="keywords"
+        content="Amiani's Fly Wholesalers, fishing flies, fly fishing, wholesale fishing flies, dry flies, nymphs, streamers, caddis, mayflies, stoneflies, Kenya"
+    >
+
+    <meta
+        name="author"
+        content="Amiani's Fly Wholesalers"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0b3d2e"
+    >
+
+    <title>
+        Amiani's Fly Wholesalers | Quality Fishing Flies
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <!-- Supabase -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        defer
+    ></script>
+
+    <!-- Supabase Configuration -->
+    <script
+        src="supabase-config.js"
+        defer
+    ></script>
+
+</head>
+
+
+<body>
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
     <div id="site-header"></div>
 
+
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
+
     <section class="hero">
-      <div class="container hero-grid">
-        <div>
-          <div class="eyebrow">AMANI Fishing Wholesale</div>
-          <h1>Quality flies. Better fishing.</h1>
-          <p>Shop dependable fishing flies for anglers, guides, fly shops and wholesale buyers. Browse by fly family and order online.</p>
-          <div class="hero-actions">
-            <a class="btn btn-gold" href="shop.html">Shop Flies</a>
-            <a class="btn btn-light" href="contact.html">Wholesale Enquiry</a>
-          </div>
+
+        <div class="container hero-grid">
+
+            <div>
+
+                <div class="eyebrow">
+                    Amiani's Fly Wholesalers
+                </div>
+
+                <h1>
+                    Quality flies.
+                    <br>
+                    Better fishing.
+                </h1>
+
+                <p>
+                    Shop dependable fishing flies for anglers,
+                    guides, fly shops and wholesale buyers.
+                    Browse our fly categories, explore patterns
+                    and order online.
+                </p>
+
+                <p class="muted">
+                    All prices are displayed in
+                    <strong>USD per dozen</strong>.
+                    One dozen contains 12 flies.
+                </p>
+
+
+                <div class="hero-actions">
+
+                    <a
+                        class="btn btn-gold"
+                        href="shop.html"
+                    >
+                        Shop Flies
+                    </a>
+
+                    <a
+                        class="btn btn-light"
+                        href="contact.html"
+                    >
+                        Wholesale Enquiry
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <div class="hero-card">
+
+                <img
+                    src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?auto=format&fit=crop&w=1200&q=80"
+                    alt="Fly fishing"
+                    loading="eager"
+                >
+
+            </div>
+
         </div>
-        <div class="hero-card">
-          <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?auto=format&fit=crop&w=1200&q=80" alt="Fly fishing">
-        </div>
-      </div>
+
     </section>
+
+
+    <!-- =====================================================
+         CATEGORIES
+    ====================================================== -->
 
     <section class="section">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <div class="eyebrow">Explore</div>
-            <h2>Fly Categories</h2>
-          </div>
-          <a class="btn btn-light" href="shop.html">View all</a>
+
+        <div class="container">
+
+            <div class="section-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        Explore
+                    </div>
+
+                    <h2>
+                        Fly Categories
+                    </h2>
+
+                    <p class="muted">
+                        Explore our range of fishing fly families
+                        and discover patterns for different
+                        fishing conditions.
+                    </p>
+
+                </div>
+
+                <a
+                    class="btn btn-light"
+                    href="shop.html"
+                >
+                    View All
+                </a>
+
+            </div>
+
+
+            <div
+                class="grid grid-4"
+                data-home-categories
+            >
+
+                <div class="notice">
+                    Loading categories...
+                </div>
+
+            </div>
+
         </div>
-        <div class="grid grid-4" data-home-categories></div>
-      </div>
+
     </section>
 
-    <section class="section" style="background:var(--cream)">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <div class="eyebrow">Shop</div>
-            <h2>Latest Flies</h2>
-          </div>
-          <a class="btn btn-light" href="shop.html">Shop all</a>
+
+    <!-- =====================================================
+         LATEST PRODUCTS
+    ====================================================== -->
+
+    <section
+        class="section"
+        style="background:var(--cream)"
+    >
+
+        <div class="container">
+
+            <div class="section-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        Shop
+                    </div>
+
+                    <h2>
+                        Latest Flies
+                    </h2>
+
+                    <p class="muted">
+                        Browse our latest fishing fly products.
+                        Prices are shown per dozen.
+                    </p>
+
+                </div>
+
+                <a
+                    class="btn btn-light"
+                    href="shop.html"
+                >
+                    Shop All
+                </a>
+
+            </div>
+
+
+            <div
+                class="grid grid-4"
+                data-home-products
+            >
+
+                <div class="notice">
+                    Loading products...
+                </div>
+
+            </div>
+
         </div>
-        <div class="grid grid-4" data-home-products></div>
-      </div>
+
     </section>
+
+
+    <!-- =====================================================
+         WHOLESALE CTA
+    ====================================================== -->
 
     <section class="section">
-      <div class="container cta">
-        <div class="eyebrow">Wholesale</div>
-        <h2>Stock your fly shop with AMANI.</h2>
-        <p class="muted">Use our online catalogue to discover fly patterns, sizes and pricing, then contact us for wholesale requirements.</p>
-        <a class="btn btn-primary" href="contact.html">Contact AMANI</a>
-      </div>
+
+        <div class="container">
+
+            <div class="cta">
+
+                <div class="eyebrow">
+                    Wholesale
+                </div>
+
+                <h2>
+                    Stock your fly shop with
+                    Amiani's Fly Wholesalers.
+                </h2>
+
+                <p class="muted">
+                    Use our online catalogue to discover
+                    fly patterns, sizes and wholesale pricing.
+                    Then contact us for larger orders,
+                    delivery information and custom
+                    fly requirements.
+                </p>
+
+
+                <div
+                    style="
+                        display:flex;
+                        gap:12px;
+                        flex-wrap:wrap;
+                        justify-content:center;
+                    "
+                >
+
+                    <a
+                        class="btn btn-primary"
+                        href="contact.html"
+                    >
+                        Contact Us
+                    </a>
+
+                    <a
+                        class="btn btn-light"
+                        href="shop.html"
+                    >
+                        Browse Flies
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </section>
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
 
     <div id="site-footer"></div>
-    <script src="app.js"></script>
-  </body>
+
+
+    <!-- =====================================================
+         APPLICATION
+    ====================================================== -->
+
+    <script
+        src="app.js"
+        defer
+    ></script>
+
+</body>
+
 </html>
+```

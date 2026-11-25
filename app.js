@@ -1,48 +1,99 @@
 // ============================================================
-// AMANI FISHING WHOLESALE
+// AMIANI'S FLY WHOLESALERS
 // STOREFRONT APP
 // PRICING: USD PER DOZEN
 // ============================================================
 
-const AMANI = {
+const AMIANI = {
 
+  // Keep the existing Supabase configuration name.
+  // This is a technical variable name and does not affect branding.
   sb: window.AMANI_SUPABASE,
 
+  brandName: "Amiani's Fly Wholesalers",
+
   // ==========================================================
-  // MONEY - USD PER DOZEN
+  // MONEY
   // ==========================================================
 
-  money(v) {
-    return `$${Number(v || 0).toFixed(2)}`;
+  money(value) {
+
+    const amount = Number(value || 0);
+
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+
   },
 
-  moneyPerDozen(v) {
-    return `$${Number(v || 0).toFixed(2)} / dozen`;
+
+  moneyPerDozen(value) {
+
+    return `${this.money(value)} / dozen`;
+
   },
 
-  esc(v = '') {
-    return String(v).replace(
+
+  // ==========================================================
+  // ESCAPE HTML
+  // ==========================================================
+
+  esc(value = "") {
+
+    return String(value).replace(
       /[&<>"']/g,
-      m => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      }[m])
+      character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[character])
     );
+
   },
 
-  slug(v = '') {
-    return v
+
+  // ==========================================================
+  // ESCAPE ATTRIBUTE
+  // ==========================================================
+
+  escAttr(value = "") {
+
+    return this.esc(value);
+
+  },
+
+
+  // ==========================================================
+  // SLUG
+  // ==========================================================
+
+  slug(value = "") {
+
+    return String(value)
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
   },
 
-  placeholder(text = 'AMANI FISHING') {
-    return `https://placehold.co/900x700/eef3f0/0c4a3c?text=${encodeURIComponent(text)}`;
+
+  // ==========================================================
+  // PLACEHOLDER
+  // ==========================================================
+
+  placeholder(text = "Amiani's Fly Wholesalers") {
+
+    return (
+      "https://placehold.co/900x700/eef3f0/0c4a3c?text=" +
+      encodeURIComponent(text)
+    );
+
   },
 
 
@@ -52,31 +103,42 @@ const AMANI = {
 
   async categories() {
 
+    if (!this.sb) {
+      throw new Error("Supabase is not configured.");
+    }
+
     const {
       data,
       error
     } = await this.sb
-      .from('categories')
-      .select('*')
-      .order('name');
+      .from("categories")
+      .select("*")
+      .order("name", {
+        ascending: true
+      });
 
     if (error) {
       throw error;
     }
 
     return data || [];
+
   },
 
 
   async products() {
 
+    if (!this.sb) {
+      throw new Error("Supabase is not configured.");
+    }
+
     const {
       data,
       error
     } = await this.sb
-      .from('products')
-      .select('*,categories(id,name,slug)')
-      .order('created_at', {
+      .from("products")
+      .select("*,categories(id,name,slug)")
+      .order("created_at", {
         ascending: false
       });
 
@@ -85,18 +147,27 @@ const AMANI = {
     }
 
     return data || [];
+
   },
 
 
   async product(id) {
 
+    if (!this.sb) {
+      throw new Error("Supabase is not configured.");
+    }
+
+    if (!id) {
+      throw new Error("Product ID is missing.");
+    }
+
     const {
       data,
       error
     } = await this.sb
-      .from('products')
-      .select('*,categories(id,name,slug)')
-      .eq('id', id)
+      .from("products")
+      .select("*,categories(id,name,slug)")
+      .eq("id", id)
       .single();
 
     if (error) {
@@ -104,18 +175,27 @@ const AMANI = {
     }
 
     return data;
+
   },
 
 
   async category(slug) {
 
+    if (!this.sb) {
+      throw new Error("Supabase is not configured.");
+    }
+
+    if (!slug) {
+      throw new Error("Category slug is missing.");
+    }
+
     const {
       data,
       error
     } = await this.sb
-      .from('categories')
-      .select('*')
-      .eq('slug', slug)
+      .from("categories")
+      .select("*")
+      .eq("slug", slug)
       .single();
 
     if (error) {
@@ -123,6 +203,7 @@ const AMANI = {
     }
 
     return data;
+
   },
 
 
@@ -132,18 +213,41 @@ const AMANI = {
 
   cart() {
 
-    return JSON.parse(
-      localStorage.getItem('amani_cart') || '[]'
-    );
+    try {
+
+      const stored =
+        localStorage.getItem("amani_cart");
+
+      if (!stored) {
+        return [];
+      }
+
+      const parsed =
+        JSON.parse(stored);
+
+      return Array.isArray(parsed)
+        ? parsed
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        "Could not read cart:",
+        error
+      );
+
+      return [];
+
+    }
 
   },
 
 
-  saveCart(c) {
+  saveCart(cart) {
 
     localStorage.setItem(
-      'amani_cart',
-      JSON.stringify(c)
+      "amani_cart",
+      JSON.stringify(cart)
     );
 
     this.updateCartCount();
@@ -153,92 +257,179 @@ const AMANI = {
 
   updateCartCount() {
 
-    const n =
+    const quantity =
       this.cart().reduce(
-        (a, x) =>
-          a + Number(x.qty || 1),
+        (total, item) =>
+          total + Number(item.qty || 0),
         0
       );
 
+
     document
-      .querySelectorAll('[data-cart-count]')
-      .forEach(e => {
-        e.textContent = n;
+      .querySelectorAll("[data-cart-count]")
+      .forEach(element => {
+
+        element.textContent =
+          quantity;
+
+        element.setAttribute(
+          "aria-label",
+          `${quantity} dozen in cart`
+        );
+
       });
 
   },
 
 
-  addCart(p, qty = 1) {
+  // ==========================================================
+  // ADD TO CART
+  // ==========================================================
 
-    qty = Math.max(
+  addCart(product, quantity = 1) {
+
+    if (!product || !product.id) {
+      return;
+    }
+
+
+    quantity = Math.max(
       1,
-      Number(qty || 1)
+      Math.floor(
+        Number(quantity) || 1
+      )
     );
 
-    const c = this.cart();
 
-    const old =
-      c.find(
-        x => x.id === p.id
+    // Stock is stored in dozens.
+    const stock =
+      Number(product.stock || 0);
+
+
+    // If stock is defined and there is no stock.
+    if (stock <= 0) {
+
+      alert(
+        "This product is currently out of stock."
+      );
+
+      return;
+
+    }
+
+
+    const cart =
+      this.cart();
+
+
+    const existing =
+      cart.find(
+        item =>
+          item.id === product.id
       );
 
 
-    if (old) {
+    if (existing) {
 
-      old.qty =
-        Number(old.qty || 0) +
-        qty;
+      const newQuantity =
+        Number(existing.qty || 0) +
+        quantity;
+
+
+      if (
+        stock > 0 &&
+        newQuantity > stock
+      ) {
+
+        alert(
+          `Only ${stock} dozen(s) of ${product.name} are currently available.`
+        );
+
+        return;
+
+      }
+
+
+      existing.qty =
+        newQuantity;
 
     } else {
 
-      c.push({
+      if (
+        stock > 0 &&
+        quantity > stock
+      ) {
 
-        id: p.id,
+        alert(
+          `Only ${stock} dozen(s) of ${product.name} are currently available.`
+        );
 
-        name: p.name,
+        return;
 
-        // PRICE IS PER DOZEN
-        price: Number(p.price || 0),
+      }
+
+
+      cart.push({
+
+        id: product.id,
+
+        name: product.name,
+
+        // PRICE IS USD PER DOZEN
+        price: Number(
+          product.price || 0
+        ),
 
         image_url:
-          p.image_url || '',
+          product.image_url || "",
 
-        qty
+        qty: quantity
 
       });
 
     }
 
 
-    this.saveCart(c);
+    this.saveCart(cart);
 
 
     alert(
-      `${p.name} added to cart.\n\nPrice: ${this.moneyPerDozen(p.price)}`
+      `${product.name} added to your cart.\n\n` +
+      `Quantity: ${quantity} dozen\n` +
+      `Price: ${this.moneyPerDozen(product.price)}`
     );
 
   },
 
+
+  // ==========================================================
+  // REMOVE CART ITEM
+  // ==========================================================
 
   removeCart(id) {
 
-    this.saveCart(
+    const cart =
       this.cart().filter(
-        x => x.id !== id
-      )
-    );
+        item =>
+          item.id !== id
+      );
+
+    this.saveCart(cart);
 
   },
 
+
+  // ==========================================================
+  // CART TOTAL
+  // ==========================================================
 
   total() {
 
     return this.cart().reduce(
-      (a, x) =>
-        a +
-        Number(x.price || 0) *
-        Number(x.qty || 0),
+      (total, item) =>
+        total +
+        Number(item.price || 0) *
+        Number(item.qty || 0),
       0
     );
 
@@ -251,17 +442,18 @@ const AMANI = {
 
   async renderHeader() {
 
-    const el =
+    const element =
       document.querySelector(
-        '#site-header'
+        "#site-header"
       );
 
-    if (!el) {
+
+    if (!element) {
       return;
     }
 
 
-    el.innerHTML = `
+    element.innerHTML = `
 
       <header class="site-header">
 
@@ -270,10 +462,12 @@ const AMANI = {
           <a
             class="logo"
             href="index.html"
+            aria-label="Amiani's Fly Wholesalers Home"
           >
-            AMANI
+            AMIANI'S
+
             <span>
-              FISHING WHOLESALE
+              FLY WHOLESALERS
             </span>
           </a>
 
@@ -281,6 +475,7 @@ const AMANI = {
           <nav
             class="nav-links"
             id="mainNav"
+            aria-label="Main navigation"
           >
 
             <a href="index.html">
@@ -307,12 +502,14 @@ const AMANI = {
             <button
               class="btn btn-light"
               id="openCart"
+              type="button"
             >
               Cart
               (
               <span data-cart-count>
                 0
               </span>
+              dozen
               )
             </button>
 
@@ -320,6 +517,9 @@ const AMANI = {
             <button
               class="menu-btn"
               id="menuBtn"
+              type="button"
+              aria-label="Open navigation menu"
+              aria-expanded="false"
             >
               ☰
             </button>
@@ -333,23 +533,40 @@ const AMANI = {
     `;
 
 
-    const menuBtn =
+    // ========================================================
+    // MOBILE MENU
+    // ========================================================
+
+    const menuButton =
       document.querySelector(
-        '#menuBtn'
+        "#menuBtn"
       );
 
-    const mainNav =
+
+    const navigation =
       document.querySelector(
-        '#mainNav'
+        "#mainNav"
       );
 
 
-    if (menuBtn && mainNav) {
+    if (
+      menuButton &&
+      navigation
+    ) {
 
-      menuBtn.onclick = () => {
+      menuButton.onclick = () => {
 
-        mainNav.classList.toggle(
-          'open'
+        const isOpen =
+          navigation.classList.toggle(
+            "open"
+          );
+
+
+        menuButton.setAttribute(
+          "aria-expanded",
+          isOpen
+            ? "true"
+            : "false"
         );
 
       };
@@ -357,15 +574,19 @@ const AMANI = {
     }
 
 
-    const openCart =
+    // ========================================================
+    // CART BUTTON
+    // ========================================================
+
+    const cartButton =
       document.querySelector(
-        '#openCart'
+        "#openCart"
       );
 
 
-    if (openCart) {
+    if (cartButton) {
 
-      openCart.onclick = () =>
+      cartButton.onclick = () =>
         this.openCart();
 
     }
@@ -382,21 +603,25 @@ const AMANI = {
 
   async renderFooter() {
 
-    const el =
+    const element =
       document.querySelector(
-        '#site-footer'
+        "#site-footer"
       );
 
-    if (!el) {
+
+    if (!element) {
       return;
     }
 
 
-    el.innerHTML = `
+    element.innerHTML = `
 
       <footer class="footer">
 
         <div class="container footer-grid">
+
+
+          <!-- BRAND -->
 
           <div>
 
@@ -404,21 +629,23 @@ const AMANI = {
               class="logo"
               style="color:#fff"
             >
-              AMANI
+              AMIANI'S
 
               <span
                 style="color:#d7a83e"
               >
-                FISHING WHOLESALE
+                FLY WHOLESALERS
               </span>
 
             </div>
+
 
             <p>
               Quality fishing flies
               for anglers, guides
               and wholesale buyers.
             </p>
+
 
             <p>
               <strong>
@@ -429,11 +656,14 @@ const AMANI = {
           </div>
 
 
+          <!-- SHOP -->
+
           <div>
 
             <h3>
               Shop
             </h3>
+
 
             <p>
               <a href="shop.html">
@@ -441,11 +671,13 @@ const AMANI = {
               </a>
             </p>
 
+
             <p>
               <a href="shop.html">
                 Categories
               </a>
             </p>
+
 
             <p>
               <a href="checkout.html">
@@ -456,13 +688,17 @@ const AMANI = {
           </div>
 
 
+          <!-- CONTACT -->
+
           <div>
 
             <h3>
-              Contact AMANI Fishing Wholesale
+              Contact Amiani's Fly Wholesalers
             </h3>
 
+
             <p>
+
               <strong>
                 Phone:
               </strong>
@@ -470,9 +706,12 @@ const AMANI = {
               <a href="tel:+254799028055">
                 +254 799 028 055
               </a>
+
             </p>
 
+
             <p>
+
               <strong>
                 WhatsApp:
               </strong>
@@ -480,13 +719,16 @@ const AMANI = {
               <a
                 href="https://wa.me/254720070960"
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
               >
                 Chat with us on WhatsApp
               </a>
+
             </p>
 
+
             <p>
+
               <strong>
                 Email:
               </strong>
@@ -494,12 +736,16 @@ const AMANI = {
               <a href="mailto:amianieric@gmail.com">
                 amianieric@gmail.com
               </a>
+
             </p>
 
+
             <p>
+
               <a href="admin.html">
                 Admin Login
               </a>
+
             </p>
 
           </div>
@@ -507,10 +753,12 @@ const AMANI = {
         </div>
 
 
+        <!-- COPYRIGHT -->
+
         <div class="container footer-bottom">
 
           © ${new Date().getFullYear()}
-          AMANI Fishing Wholesale.
+          Amiani's Fly Wholesalers.
           All rights reserved.
 
         </div>
@@ -528,7 +776,8 @@ const AMANI = {
 
   cartMarkup() {
 
-    const c = this.cart();
+    const cart =
+      this.cart();
 
 
     return `
@@ -544,13 +793,17 @@ const AMANI = {
         ></div>
 
 
-        <aside class="cart-panel">
+        <aside
+          class="cart-panel"
+          aria-label="Shopping cart"
+        >
 
           <div
             style="
               display:flex;
               justify-content:space-between;
               align-items:center;
+              gap:15px;
             "
           >
 
@@ -561,7 +814,7 @@ const AMANI = {
               </h2>
 
               <small class="muted">
-                All prices are per dozen
+                All prices are per dozen.
               </small>
 
             </div>
@@ -570,6 +823,8 @@ const AMANI = {
             <button
               class="close"
               id="closeCart"
+              type="button"
+              aria-label="Close cart"
             >
               ×
             </button>
@@ -580,22 +835,23 @@ const AMANI = {
           <div class="cart-items">
 
             ${
-              c.length
+              cart.length
 
-                ? c
-                    .map(x => `
+                ? cart
+                    .map(item => `
 
                       <div class="cart-item">
 
+
                         <img
                           src="${
-                            x.image_url ||
+                            item.image_url ||
                             this.placeholder(
-                              x.name
+                              item.name
                             )
                           }"
                           alt="${this.esc(
-                            x.name
+                            item.name
                           )}"
                         >
 
@@ -604,7 +860,7 @@ const AMANI = {
 
                           <strong>
                             ${this.esc(
-                              x.name
+                              item.name
                             )}
                           </strong>
 
@@ -612,17 +868,26 @@ const AMANI = {
                           <div class="muted">
 
                             ${this.moneyPerDozen(
-                              x.price
+                              item.price
                             )}
 
-                            × ${x.qty}
+                            ×
+
+                            ${Number(
+                              item.qty || 0
+                            )}
+
+                            dozen
 
                           </div>
 
 
                           <button
                             class="btn btn-danger btn-sm remove-cart"
-                            data-id="${x.id}"
+                            data-id="${this.escAttr(
+                              item.id
+                            )}"
+                            type="button"
                           >
                             Remove
                           </button>
@@ -633,8 +898,8 @@ const AMANI = {
                         <strong>
 
                           ${this.money(
-                            Number(x.price) *
-                            Number(x.qty)
+                            Number(item.price || 0) *
+                            Number(item.qty || 0)
                           )}
 
                         </strong>
@@ -642,7 +907,7 @@ const AMANI = {
                       </div>
 
                     `)
-                    .join('')
+                    .join("")
 
                 : `
 
@@ -653,11 +918,12 @@ const AMANI = {
                   </div>
 
                 `
-
             }
 
           </div>
 
+
+          <!-- TOTAL -->
 
           <div
             style="
@@ -679,6 +945,7 @@ const AMANI = {
                 Total
               </span>
 
+
               <span>
                 ${this.money(
                   this.total()
@@ -695,7 +962,7 @@ const AMANI = {
                 margin-top:5px;
               "
             >
-              Prices are calculated per dozen.
+              Quantities are measured in dozens.
             </small>
 
 
@@ -727,66 +994,91 @@ const AMANI = {
 
   openCart() {
 
-    let d =
+    let drawer =
       document.querySelector(
-        '#cartDrawer'
+        "#cartDrawer"
       );
 
 
-    if (!d) {
+    if (!drawer) {
 
       document.body.insertAdjacentHTML(
-        'beforeend',
+        "beforeend",
         this.cartMarkup()
       );
 
-      d =
+
+      drawer =
         document.querySelector(
-          '#cartDrawer'
+          "#cartDrawer"
         );
 
     }
 
 
-    d.classList.add(
-      'open'
+    if (!drawer) {
+      return;
+    }
+
+
+    drawer.classList.add(
+      "open"
     );
 
 
-    const closeCart =
+    // ========================================================
+    // CLOSE BUTTON
+    // ========================================================
+
+    const closeButton =
       document.querySelector(
-        '#closeCart'
+        "#closeCart"
       );
+
+
+    if (closeButton) {
+
+      closeButton.onclick = () => {
+
+        drawer.classList.remove(
+          "open"
+        );
+
+      };
+
+    }
+
+
+    // ========================================================
+    // OVERLAY
+    // ========================================================
 
     const overlay =
       document.querySelector(
-        '#cartOverlay'
+        "#cartOverlay"
       );
-
-
-    if (closeCart) {
-
-      closeCart.onclick = () =>
-        d.classList.remove(
-          'open'
-        );
-
-    }
 
 
     if (overlay) {
 
-      overlay.onclick = () =>
-        d.classList.remove(
-          'open'
+      overlay.onclick = () => {
+
+        drawer.classList.remove(
+          "open"
         );
+
+      };
 
     }
 
 
+    // ========================================================
+    // REMOVE BUTTONS
+    // ========================================================
+
     document
       .querySelectorAll(
-        '.remove-cart'
+        ".remove-cart"
       )
       .forEach(button => {
 
@@ -796,7 +1088,9 @@ const AMANI = {
             button.dataset.id
           );
 
-          d.remove();
+
+          drawer.remove();
+
 
           this.openCart();
 
@@ -810,75 +1104,141 @@ const AMANI = {
 
 
 // ============================================================
+// BACKWARD COMPATIBILITY
+// ============================================================
+//
+// Some older pages may still reference AMANI.
+// Keep this alias so existing inline scripts do not break.
+// Visible branding remains Amiani's Fly Wholesalers.
+// ============================================================
+
+window.AMIANI = AMIANI;
+window.AMANI = AMIANI;
+
+
+// ============================================================
 // DOM READY
 // ============================================================
 
 document.addEventListener(
-  'DOMContentLoaded',
+  "DOMContentLoaded",
   async () => {
 
-    if (!AMANI.sb) {
+    try {
+
+      if (!AMIANI.sb) {
+
+        console.error(
+          "Supabase is not configured."
+        );
+
+        const message =
+          document.querySelector(
+            "#supabaseError"
+          );
+
+        if (message) {
+
+          message.textContent =
+            "Supabase is not configured.";
+
+        }
+
+        return;
+
+      }
+
+
+      await AMIANI.renderHeader();
+
+      await AMIANI.renderFooter();
+
+
+      // ======================================================
+      // HOME CATEGORIES
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "[data-home-categories]"
+        )
+      ) {
+
+        await loadHome();
+
+      }
+
+
+      // ======================================================
+      // HOME PRODUCTS
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "[data-home-products]"
+        )
+      ) {
+
+        await loadHomeProducts();
+
+      }
+
+
+      // ======================================================
+      // SHOP
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "#shopGrid"
+        )
+      ) {
+
+        await loadShop();
+
+      }
+
+
+      // ======================================================
+      // PRODUCT
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "#productDetail"
+        )
+      ) {
+
+        await loadProductPage();
+
+      }
+
+
+      // ======================================================
+      // CATEGORY
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "#categoryPage"
+        )
+      ) {
+
+        await loadCategoryPage();
+
+      }
+
+
+      AMIANI.updateCartCount();
+
+    } catch (error) {
 
       console.error(
-        'Supabase is not configured.'
+        "Storefront initialization error:",
+        error
       );
 
-      return;
-
     }
-
-
-    await AMANI.renderHeader();
-
-    await AMANI.renderFooter();
-
-
-    if (
-      document.querySelector(
-        '[data-home-categories]'
-      )
-    ) {
-      loadHome();
-    }
-
-
-    if (
-      document.querySelector(
-        '[data-home-products]'
-      )
-    ) {
-      loadHomeProducts();
-    }
-
-
-    if (
-      document.querySelector(
-        '#shopGrid'
-      )
-    ) {
-      loadShop();
-    }
-
-
-    if (
-      document.querySelector(
-        '#productDetail'
-      )
-    ) {
-      loadProductPage();
-    }
-
-
-    if (
-      document.querySelector(
-        '#categoryPage'
-      )
-    ) {
-      loadCategoryPage();
-    }
-
-
-    AMANI.updateCartCount();
 
   }
 );
@@ -890,56 +1250,65 @@ document.addEventListener(
 
 async function loadHome() {
 
-  const el =
+  const element =
     document.querySelector(
-      '[data-home-categories]'
+      "[data-home-categories]"
     );
+
+
+  if (!element) {
+    return;
+  }
 
 
   try {
 
-    const cats =
-      await AMANI.categories();
+    const categories =
+      await AMIANI.categories();
 
 
-    el.innerHTML =
-      cats
+    element.innerHTML =
+      categories
         .slice(0, 8)
-        .map(c => `
+        .map(category => `
 
           <a
             class="card category-card"
             href="category.html?slug=${encodeURIComponent(
-              c.slug
+              category.slug
             )}"
           >
 
             <img
               src="${
-                c.image_url ||
-                AMANI.placeholder(
-                  c.name
+                category.image_url ||
+                AMIANI.placeholder(
+                  category.name
                 )
               }"
-              alt="${AMANI.esc(
-                c.name
+              alt="${AMIANI.esc(
+                category.name
               )}"
+              loading="lazy"
             >
 
 
             <div class="card-body">
 
               <h3>
-                ${AMANI.esc(
-                  c.name
+                ${AMIANI.esc(
+                  category.name
                 )}
               </h3>
 
+
               <p class="muted">
-                ${AMANI.esc(
-                  c.description ||
-                  'Explore this fly collection.'
+
+                ${AMIANI.esc(
+                  category.description ||
+                  "Explore this fishing fly collection."
                 )}
+
               </p>
 
             </div>
@@ -947,26 +1316,39 @@ async function loadHome() {
           </a>
 
         `)
-        .join('')
+        .join("")
+
 
       ||
 
       `
+
         <div class="empty">
+
           No categories yet.
           Add categories from Admin.
+
         </div>
+
       `;
 
 
-  } catch (e) {
+  } catch (error) {
 
-    el.innerHTML = `
+    console.error(
+      "Could not load categories:",
+      error
+    );
+
+
+    element.innerHTML = `
 
       <div class="notice error">
-        ${AMANI.esc(
-          e.message
+
+        ${AMIANI.esc(
+          error.message
         )}
+
       </div>
 
     `;
@@ -982,68 +1364,75 @@ async function loadHome() {
 
 async function loadHomeProducts() {
 
-  const el =
+  const element =
     document.querySelector(
-      '[data-home-products]'
+      "[data-home-products]"
     );
+
+
+  if (!element) {
+    return;
+  }
 
 
   try {
 
-    const ps =
-      (
-        await AMANI.products()
-      )
-      .filter(p => p.featured || true)
-      .slice(0, 8);
+    const products =
+      await AMIANI.products();
 
 
-    el.innerHTML =
-      ps
+    // Show latest products.
+    // The previous ".filter(p => p.featured || true)"
+    // always returned every product, so it was unnecessary.
+
+    const list =
+      products.slice(
+        0,
+        8
+      );
+
+
+    element.innerHTML =
+      list
         .map(productCard)
-        .join('')
+        .join("")
+
 
       ||
 
       `
+
         <div class="empty">
+
           No products yet.
+
         </div>
+
       `;
 
 
-    el
-      .querySelectorAll(
-        '.add-product'
-      )
-      .forEach(button => {
-
-        button.onclick = () => {
-
-          const p =
-            ps.find(
-              x =>
-                x.id ===
-                button.dataset.id
-            );
-
-          if (p) {
-            AMANI.addCart(p);
-          }
-
-        };
-
-      });
+    attachAddButtons(
+      element,
+      products
+    );
 
 
-  } catch (e) {
+  } catch (error) {
 
-    el.innerHTML = `
+    console.error(
+      "Could not load home products:",
+      error
+    );
+
+
+    element.innerHTML = `
 
       <div class="notice error">
-        ${AMANI.esc(
-          e.message
+
+        ${AMIANI.esc(
+          error.message
         )}
+
       </div>
 
     `;
@@ -1057,7 +1446,17 @@ async function loadHomeProducts() {
 // PRODUCT CARD
 // ============================================================
 
-function productCard(p) {
+function productCard(product) {
+
+  const stock =
+    Number(
+      product.stock || 0
+    );
+
+
+  const isOutOfStock =
+    stock <= 0;
+
 
   return `
 
@@ -1065,20 +1464,24 @@ function productCard(p) {
       class="card product-card"
     >
 
+
       <a
-        href="product.html?id=${p.id}"
+        href="product.html?id=${encodeURIComponent(
+          product.id
+        )}"
       >
 
         <img
           src="${
-            p.image_url ||
-            AMANI.placeholder(
-              p.name
+            product.image_url ||
+            AMIANI.placeholder(
+              product.name
             )
           }"
-          alt="${AMANI.esc(
-            p.name
+          alt="${AMIANI.esc(
+            product.name
           )}"
+          loading="lazy"
         >
 
       </a>
@@ -1086,20 +1489,23 @@ function productCard(p) {
 
       <div class="card-body">
 
+
         <span class="badge">
 
-          ${AMANI.esc(
-            p.categories?.name ||
-            'Fishing Fly'
+          ${AMIANI.esc(
+            product.categories?.name ||
+            "Fishing Fly"
           )}
 
         </span>
 
 
         <h3>
-          ${AMANI.esc(
-            p.name
+
+          ${AMIANI.esc(
+            product.name
           )}
+
         </h3>
 
 
@@ -1109,12 +1515,12 @@ function productCard(p) {
 
           <div>
 
-            <span
-              class="price"
-            >
-              ${AMANI.moneyPerDozen(
-                p.price
+            <span class="price">
+
+              ${AMIANI.moneyPerDozen(
+                product.price
               )}
+
             </span>
 
           </div>
@@ -1122,9 +1528,19 @@ function productCard(p) {
 
           <button
             class="btn btn-primary btn-sm add-product"
-            data-id="${p.id}"
+            data-id="${AMIANI.escAttr(
+              product.id
+            )}"
+            type="button"
+            ${isOutOfStock ? "disabled" : ""}
           >
-            Add
+
+            ${
+              isOutOfStock
+                ? "Out of Stock"
+                : "Add 1 Dozen"
+            }
+
           </button>
 
         </div>
@@ -1137,7 +1553,24 @@ function productCard(p) {
             margin-top:6px;
           "
         >
+
           Price per dozen
+
+        </small>
+
+
+        <small
+          class="muted"
+          style="
+            display:block;
+            margin-top:4px;
+          "
+        >
+
+          Stock:
+          ${stock}
+          dozen${stock === 1 ? "" : "s"}
+
         </small>
 
       </div>
@@ -1150,6 +1583,54 @@ function productCard(p) {
 
 
 // ============================================================
+// ATTACH ADD BUTTONS
+// ============================================================
+
+function attachAddButtons(
+  container,
+  products
+) {
+
+  if (!container) {
+    return;
+  }
+
+
+  container
+    .querySelectorAll(
+      ".add-product"
+    )
+    .forEach(button => {
+
+      button.onclick = () => {
+
+        const product =
+          products.find(
+            item =>
+              String(item.id) ===
+              String(
+                button.dataset.id
+              )
+          );
+
+
+        if (product) {
+
+          AMIANI.addCart(
+            product,
+            1
+          );
+
+        }
+
+      };
+
+    });
+
+}
+
+
+// ============================================================
 // SHOP
 // ============================================================
 
@@ -1157,143 +1638,186 @@ async function loadShop() {
 
   const grid =
     document.querySelector(
-      '#shopGrid'
+      "#shopGrid"
     );
+
+
+  if (!grid) {
+    return;
+  }
+
 
   const search =
     document.querySelector(
-      '#shopSearch'
+      "#shopSearch"
     );
+
 
   const filter =
     document.querySelector(
-      '#shopCategory'
+      "#shopCategory"
     );
 
 
   try {
 
     const [
-      ps,
-      cats
+      products,
+      categories
     ] =
       await Promise.all([
-        AMANI.products(),
-        AMANI.categories()
+        AMIANI.products(),
+        AMIANI.categories()
       ]);
 
 
-    filter.innerHTML =
-      '<option value="">All categories</option>' +
+    if (filter) {
 
-      cats
-        .map(c => `
+      filter.innerHTML =
+        '<option value="">All categories</option>' +
 
-          <option
-            value="${c.id}"
-          >
-            ${AMANI.esc(
-              c.name
-            )}
-          </option>
+        categories
+          .map(category => `
 
-        `)
-        .join('');
+            <option
+              value="${AMIANI.escAttr(
+                category.id
+              )}"
+            >
+
+              ${AMIANI.esc(
+                category.name
+              )}
+
+            </option>
+
+          `)
+          .join("");
+
+    }
 
 
     function draw() {
 
-      const q =
-        search.value
-          .toLowerCase()
-          .trim();
+      const query =
+        search
+          ? search.value
+              .toLowerCase()
+              .trim()
+          : "";
 
-      const cat =
-        filter.value;
+
+      const categoryId =
+        filter
+          ? filter.value
+          : "";
 
 
       const list =
-        ps.filter(
-          p =>
+        products.filter(
+          product => {
 
-            (
-              !q ||
-
-              p.name
-                .toLowerCase()
-                .includes(q) ||
-
+            const name =
               String(
-                p.description || ''
+                product.name || ""
               )
-                .toLowerCase()
-                .includes(q)
-            )
+              .toLowerCase();
 
-            &&
 
-            (
-              !cat ||
-              p.category_id === cat
-            )
+            const description =
+              String(
+                product.description || ""
+              )
+              .toLowerCase();
+
+
+            const matchesSearch =
+              !query ||
+              name.includes(query) ||
+              description.includes(query);
+
+
+            const matchesCategory =
+              !categoryId ||
+              String(
+                product.category_id
+              ) ===
+              String(
+                categoryId
+              );
+
+
+            return (
+              matchesSearch &&
+              matchesCategory
+            );
+
+          }
         );
 
 
       grid.innerHTML =
         list
           .map(productCard)
-          .join('')
+          .join("")
+
 
         ||
 
         `
+
           <div class="empty">
+
             No matching flies found.
+
           </div>
+
         `;
 
 
-      grid
-        .querySelectorAll(
-          '.add-product'
-        )
-        .forEach(button => {
-
-          button.onclick = () => {
-
-            const p =
-              ps.find(
-                x =>
-                  x.id ===
-                  button.dataset.id
-              );
-
-            if (p) {
-              AMANI.addCart(p);
-            }
-
-          };
-
-        });
+      attachAddButtons(
+        grid,
+        products
+      );
 
     }
 
 
-    search.oninput = draw;
+    if (search) {
 
-    filter.onchange = draw;
+      search.oninput =
+        draw;
+
+    }
+
+
+    if (filter) {
+
+      filter.onchange =
+        draw;
+
+    }
+
 
     draw();
 
 
-  } catch (e) {
+  } catch (error) {
+
+    console.error(
+      "Could not load shop:",
+      error
+    );
+
 
     grid.innerHTML = `
 
       <div class="notice error">
-        ${AMANI.esc(
-          e.message
+
+        ${AMIANI.esc(
+          error.message
         )}
+
       </div>
 
     `;
@@ -1311,14 +1835,19 @@ async function loadProductPage() {
 
   const box =
     document.querySelector(
-      '#productDetail'
+      "#productDetail"
     );
+
+
+  if (!box) {
+    return;
+  }
 
 
   const id =
     new URLSearchParams(
-      location.search
-    ).get('id');
+      window.location.search
+    ).get("id");
 
 
   if (!id) {
@@ -1326,7 +1855,9 @@ async function loadProductPage() {
     box.innerHTML = `
 
       <div class="notice error">
+
         Product not found.
+
       </div>
 
     `;
@@ -1338,10 +1869,20 @@ async function loadProductPage() {
 
   try {
 
-    const p =
-      await AMANI.product(
+    const product =
+      await AMIANI.product(
         id
       );
+
+
+    const stock =
+      Number(
+        product.stock || 0
+      );
+
+
+    const outOfStock =
+      stock <= 0;
 
 
     box.innerHTML = `
@@ -1352,13 +1893,13 @@ async function loadProductPage() {
 
         <img
           src="${
-            p.image_url ||
-            AMANI.placeholder(
-              p.name
+            product.image_url ||
+            AMIANI.placeholder(
+              product.name
             )
           }"
-          alt="${AMANI.esc(
-            p.name
+          alt="${AMIANI.esc(
+            product.name
           )}"
         >
 
@@ -1367,30 +1908,33 @@ async function loadProductPage() {
 
       <div>
 
+
         <span class="badge">
 
-          ${AMANI.esc(
-            p.categories?.name ||
-            'Fishing Fly'
+          ${AMIANI.esc(
+            product.categories?.name ||
+            "Fishing Fly"
           )}
 
         </span>
 
 
         <h1>
-          ${AMANI.esc(
-            p.name
+
+          ${AMIANI.esc(
+            product.name
           )}
+
         </h1>
 
 
         <div
           class="price"
-          style="font-size:28px"
+          style="font-size:28px;"
         >
 
-          ${AMANI.moneyPerDozen(
-            p.price
+          ${AMIANI.moneyPerDozen(
+            product.price
           )}
 
         </div>
@@ -1398,20 +1942,22 @@ async function loadProductPage() {
 
         <p
           class="muted"
-          style="
-            font-weight:600;
-          "
+          style="font-weight:600;"
         >
+
           Price is for one dozen
           (12 flies).
+
         </p>
 
 
         <p>
-          ${AMANI.esc(
-            p.description ||
-            'Quality fishing fly from AMANI Fishing Wholesale.'
+
+          ${AMIANI.esc(
+            product.description ||
+            "Quality fishing fly from Amiani's Fly Wholesalers."
           )}
+
         </p>
 
 
@@ -1421,9 +1967,9 @@ async function loadProductPage() {
             Sizes:
           </strong>
 
-          ${AMANI.esc(
-            p.sizes ||
-            'Contact us for available sizes'
+          ${AMIANI.esc(
+            product.sizes ||
+            "Contact us for available sizes"
           )}
 
         </p>
@@ -1435,17 +1981,46 @@ async function loadProductPage() {
             Stock:
           </strong>
 
-          ${p.stock}
-
-          dozen(s)
+          ${stock}
+          dozen${stock === 1 ? "" : "s"}
 
         </p>
 
 
+        ${
+          outOfStock
+            ? `
+
+              <p
+                class="notice error"
+              >
+                This product is currently out of stock.
+              </p>
+
+            `
+            : ""
+        }
+
+
         <div class="qty">
+
+          <label
+            for="qty"
+            class="muted"
+            style="
+              width:100%;
+              display:block;
+              margin-bottom:6px;
+            "
+          >
+            Quantity (dozens)
+          </label>
+
 
           <button
             id="minus"
+            type="button"
+            ${outOfStock ? "disabled" : ""}
           >
             −
           </button>
@@ -1456,12 +2031,16 @@ async function loadProductPage() {
             id="qty"
             type="number"
             min="1"
+            max="${stock > 0 ? stock : 1}"
             value="1"
+            ${outOfStock ? "disabled" : ""}
           >
 
 
           <button
             id="plus"
+            type="button"
+            ${outOfStock ? "disabled" : ""}
           >
             +
           </button>
@@ -1472,8 +2051,16 @@ async function loadProductPage() {
         <button
           class="btn btn-primary"
           id="addDetail"
+          type="button"
+          ${outOfStock ? "disabled" : ""}
         >
-          Add to Cart
+
+          ${
+            outOfStock
+              ? "Out of Stock"
+              : "Add 1 Dozen to Cart"
+          }
+
         </button>
 
       </div>
@@ -1481,55 +2068,244 @@ async function loadProductPage() {
     `;
 
 
-    const q =
+    const quantityInput =
       document.querySelector(
-        '#qty'
+        "#qty"
       );
 
 
-    document.querySelector(
-      '#minus'
-    ).onclick = () => {
+    const addButton =
+      document.querySelector(
+        "#addDetail"
+      );
 
-      q.value =
-        Math.max(
-          1,
-          Number(q.value) - 1
+
+    const minusButton =
+      document.querySelector(
+        "#minus"
+      );
+
+
+    const plusButton =
+      document.querySelector(
+        "#plus"
+      );
+
+
+    if (
+      !quantityInput ||
+      !addButton
+    ) {
+      return;
+    }
+
+
+    // ========================================================
+    // UPDATE BUTTON
+    // ========================================================
+
+    function updateAddButton() {
+
+      let quantity =
+        Number(
+          quantityInput.value || 1
         );
 
+
+      quantity =
+        Math.max(
+          1,
+          Math.floor(
+            Number.isFinite(quantity)
+              ? quantity
+              : 1
+          )
+        );
+
+
+      if (stock > 0) {
+
+        quantity =
+          Math.min(
+            quantity,
+            stock
+          );
+
+      }
+
+
+      quantityInput.value =
+        quantity;
+
+
+      addButton.textContent =
+        quantity === 1
+          ? "Add 1 Dozen to Cart"
+          : `Add ${quantity} Dozen to Cart`;
+
+    }
+
+
+    // ========================================================
+    // MINUS
+    // ========================================================
+
+    if (minusButton) {
+
+      minusButton.onclick = () => {
+
+        quantityInput.value =
+          Math.max(
+            1,
+            Number(
+              quantityInput.value || 1
+            ) - 1
+          );
+
+
+        updateAddButton();
+
+      };
+
+    }
+
+
+    // ========================================================
+    // PLUS
+    // ========================================================
+
+    if (plusButton) {
+
+      plusButton.onclick = () => {
+
+        let quantity =
+          Number(
+            quantityInput.value || 1
+          ) + 1;
+
+
+        if (stock > 0) {
+
+          quantity =
+            Math.min(
+              quantity,
+              stock
+            );
+
+        }
+
+
+        quantityInput.value =
+          quantity;
+
+
+        updateAddButton();
+
+      };
+
+    }
+
+
+    // ========================================================
+    // MANUAL QUANTITY INPUT
+    // ========================================================
+
+    quantityInput.oninput = () => {
+
+      let quantity =
+        Number(
+          quantityInput.value
+        );
+
+
+      if (
+        !Number.isFinite(
+          quantity
+        ) ||
+        quantity < 1
+      ) {
+
+        quantity = 1;
+
+      }
+
+
+      if (stock > 0) {
+
+        quantity =
+          Math.min(
+            quantity,
+            stock
+          );
+
+      }
+
+
+      quantityInput.value =
+        Math.floor(
+          quantity
+        );
+
+
+      updateAddButton();
+
     };
 
 
-    document.querySelector(
-      '#plus'
-    ).onclick = () => {
+    // ========================================================
+    // ADD PRODUCT
+    // ========================================================
 
-      q.value =
-        Number(q.value) + 1;
+    addButton.onclick = () => {
 
-    };
+      let quantity =
+        Math.max(
+          1,
+          Math.floor(
+            Number(
+              quantityInput.value || 1
+            )
+          )
+        );
 
 
-    document.querySelector(
-      '#addDetail'
-    ).onclick = () => {
+      if (stock > 0) {
 
-      AMANI.addCart(
-        p,
-        Number(q.value)
+        quantity =
+          Math.min(
+            quantity,
+            stock
+          );
+
+      }
+
+
+      AMIANI.addCart(
+        product,
+        quantity
       );
 
     };
 
 
-  } catch (e) {
+    updateAddButton();
+
+  } catch (error) {
+
+    console.error(
+      "Could not load product:",
+      error
+    );
+
 
     box.innerHTML = `
 
       <div class="notice error">
-        ${AMANI.esc(
-          e.message
+
+        ${AMIANI.esc(
+          error.message
         )}
+
       </div>
 
     `;
@@ -1547,33 +2323,59 @@ async function loadCategoryPage() {
 
   const box =
     document.querySelector(
-      '#categoryPage'
+      "#categoryPage"
     );
+
+
+  if (!box) {
+    return;
+  }
 
 
   const slug =
     new URLSearchParams(
-      location.search
-    ).get('slug');
+      window.location.search
+    ).get("slug");
+
+
+  if (!slug) {
+
+    box.innerHTML = `
+
+      <div class="notice error">
+
+        Category not found.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
 
 
   try {
 
     const [
-      c,
-      ps
+      category,
+      products
     ] =
       await Promise.all([
-        AMANI.category(slug),
-        AMANI.products()
+        AMIANI.category(slug),
+        AMIANI.products()
       ]);
 
 
     const list =
-      ps.filter(
-        p =>
-          p.category_id ===
-          c.id
+      products.filter(
+        product =>
+          String(
+            product.category_id
+          ) ===
+          String(
+            category.id
+          )
       );
 
 
@@ -1585,22 +2387,27 @@ async function loadCategoryPage() {
 
         <div>
 
+
           <div class="eyebrow">
             Collection
           </div>
 
 
           <h1>
-            ${AMANI.esc(
-              c.name
+
+            ${AMIANI.esc(
+              category.name
             )}
+
           </h1>
 
 
           <p class="muted">
-            ${AMANI.esc(
-              c.description || ''
+
+            ${AMIANI.esc(
+              category.description || ""
             )}
+
           </p>
 
         </div>
@@ -1613,15 +2420,20 @@ async function loadCategoryPage() {
         ${
           list
             .map(productCard)
-            .join('')
+            .join("")
+
 
           ||
 
           `
+
             <div class="empty">
+
               No products in this
               category yet.
+
             </div>
+
           `
         }
 
@@ -1630,38 +2442,28 @@ async function loadCategoryPage() {
     `;
 
 
-    box
-      .querySelectorAll(
-        '.add-product'
-      )
-      .forEach(button => {
-
-        button.onclick = () => {
-
-          const p =
-            ps.find(
-              x =>
-                x.id ===
-                button.dataset.id
-            );
-
-          if (p) {
-            AMANI.addCart(p);
-          }
-
-        };
-
-      });
+    attachAddButtons(
+      box,
+      products
+    );
 
 
-  } catch (e) {
+  } catch (error) {
+
+    console.error(
+      "Could not load category:",
+      error
+    );
+
 
     box.innerHTML = `
 
       <div class="notice error">
-        ${AMANI.esc(
-          e.message
+
+        ${AMIANI.esc(
+          error.message
         )}
+
       </div>
 
     `;

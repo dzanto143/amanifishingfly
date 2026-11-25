@@ -1,32 +1,135 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Shop | AMANI Fishing Wholesale</title>
-        <link rel="stylesheet" href="style.css">
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <script src="supabase-config.js"></script>
-    </head>
-    <body>
-        <div id="site-header"></div>
-        <main class="section">
-            <div class="container">
-                <div class="section-head">
-                    <div>
-                        <div class="eyebrow">Catalogue</div>
-                        <h1>Shop Fishing Flies</h1>
-                        <p class="muted">Find the right pattern for your next fishing trip.</p>
+<head>
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="description"
+        content="Shop quality fishing flies from Amiani's Fly Wholesalers. Browse dry flies, nymphs, streamers, caddis, mayflies, stoneflies and more. Wholesale prices in USD per dozen."
+    >
+
+    <meta
+        name="keywords"
+        content="fishing flies, fly fishing, wholesale fishing flies, fishing fly patterns, dry flies, nymphs, streamers, caddis flies, mayflies, stoneflies, Amiani's Fly Wholesalers"
+    >
+
+    <meta
+        name="author"
+        content="Amiani's Fly Wholesalers"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0b3d2e"
+    >
+
+    <title>Shop Fishing Flies | Amiani's Fly Wholesalers</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Supabase browser library -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        defer
+    ></script>
+
+    <!-- Supabase configuration -->
+    <script
+        src="supabase-config.js"
+        defer
+    ></script>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <div id="site-header"></div>
+
+    <main class="section">
+
+        <div class="container">
+
+            <!-- Page heading -->
+            <div class="section-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        Catalogue
                     </div>
+
+                    <h1>
+                        Shop Fishing Flies
+                    </h1>
+
+                    <p class="muted">
+                        Browse quality fishing flies from
+                        Amiani's Fly Wholesalers. Find the right
+                        fly pattern for your next fishing trip,
+                        guide service or fly shop.
+                    </p>
+
+                    <p class="muted">
+                        <strong>All prices are in USD per dozen.</strong>
+                        One dozen contains 12 flies.
+                    </p>
+
                 </div>
-                <div class="filters">
-                    <input id="shopSearch" class="field" placeholder="Search flies...">
-                    <select id="shopCategory" class="field"></select>
-                </div>
-                <div id="shopGrid" class="grid grid-4"></div>
+
             </div>
-        </main>
-        <div id="site-footer"></div>
-        <script src="app.js"></script>
-    </body>
+
+            <!-- Search and category filters -->
+            <div class="filters">
+
+                <input
+                    id="shopSearch"
+                    class="field"
+                    type="search"
+                    placeholder="Search flies..."
+                    aria-label="Search fishing flies"
+                    autocomplete="off"
+                >
+
+                <select
+                    id="shopCategory"
+                    class="field"
+                    aria-label="Filter by fishing fly category"
+                >
+                    <option value="">
+                        All Categories
+                    </option>
+                </select>
+
+            </div>
+
+            <!-- Products -->
+            <div
+                id="shopGrid"
+                class="grid grid-4"
+                aria-live="polite"
+            >
+                <div class="notice">
+                    Loading fishing flies...
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <div id="site-footer"></div>
+
+    <!-- Main application -->
+    <script
+        src="app.js"
+        defer
+    ></script>
+
+</body>
 </html>

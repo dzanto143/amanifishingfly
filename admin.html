@@ -9,33 +9,47 @@
     content="width=device-width, initial-scale=1"
   >
 
-  <title>Admin | AMANI Fishing Wholesale</title>
+  <title>Admin | Amiani's Fly Wholesalers</title>
+
+  <meta
+    name="description"
+    content="Amiani's Fly Wholesalers administration panel for managing fishing fly categories, products and orders."
+  >
 
   <link rel="stylesheet" href="style.css">
 
-  <!-- Supabase browser library -->
+  <!-- =====================================================
+       SUPABASE
+  ====================================================== -->
+
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
     defer>
   </script>
 
-  <!-- Configuration -->
-  <script src="supabase-config.js" defer></script>
+  <!-- Supabase Configuration -->
+  <script
+    src="supabase-config.js"
+    defer>
+  </script>
 
-  <!-- Main website JavaScript -->
-  <script src="app.js" defer></script>
+  <!-- Main Storefront JavaScript -->
+  <script
+    src="app.js"
+    defer>
+  </script>
 
   <!-- Admin JavaScript -->
-  <script src="admin.js" defer></script>
+  <script
+    src="admin.js"
+    defer>
+  </script>
 
-  <script>
-  if (typeof initializeAmaniSupabase === "function") {
-    initializeAmaniSupabase();
-  }
-</script>
 </head>
 
+
 <body class="admin-shell">
+
 
 <!-- =========================================================
      HEADER
@@ -53,15 +67,26 @@
     "
   >
 
-    <div
+    <!-- BRAND -->
+
+    <a
+      href="index.html"
       class="logo"
-      style="color:#fff;"
+      style="
+        color:#fff;
+        text-decoration:none;
+        line-height:1.1;
+      "
     >
-      AMANI
+      AMIANI'S
+
       <span style="color:#d7a83e;">
-        FISHING WHOLESALE ADMIN
+        FLY WHOLESALERS
       </span>
-    </div>
+    </a>
+
+
+    <!-- LOGOUT -->
 
     <button
       id="logout"
@@ -77,8 +102,9 @@
 </header>
 
 
+
 <!-- =========================================================
-     LOGIN
+     LOGIN VIEW
 ========================================================= -->
 
 <main
@@ -89,15 +115,33 @@
 
   <div class="admin-panel">
 
-    <h1>Admin Login</h1>
+    <h1>
+      Admin Login
+    </h1>
 
-    <p style="color:#666;margin-bottom:20px;">
-      Sign in to manage your Amani Fishing Wholesale store.
+
+    <p
+      style="
+        color:#666;
+        margin-bottom:20px;
+      "
+    >
+      Sign in to manage your
+      <strong>Amiani's Fly Wholesalers</strong>
+      store.
     </p>
+
+
+    <!-- Login messages -->
 
     <div id="loginMessage"></div>
 
+
+    <!-- LOGIN FORM -->
+
     <form id="loginForm">
+
+      <!-- EMAIL -->
 
       <div class="form-group">
 
@@ -118,6 +162,8 @@
       </div>
 
 
+      <!-- PASSWORD -->
+
       <div class="form-group">
 
         <label for="loginPassword">
@@ -137,11 +183,16 @@
       </div>
 
 
+      <!-- LOGIN BUTTON -->
+
       <button
         id="loginButton"
         type="submit"
         class="btn btn-primary"
-        style="width:100%;margin-top:15px;"
+        style="
+          width:100%;
+          margin-top:15px;
+        "
       >
         Login
       </button>
@@ -151,6 +202,7 @@
   </div>
 
 </main>
+
 
 
 <!-- =========================================================
@@ -164,7 +216,10 @@
 
   <div class="admin-layout">
 
-    <!-- SIDEBAR -->
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
 
     <aside class="admin-sidebar">
 
@@ -176,6 +231,7 @@
         Dashboard
       </button>
 
+
       <button
         type="button"
         data-tab="categories"
@@ -183,12 +239,14 @@
         Categories
       </button>
 
+
       <button
         type="button"
         data-tab="products"
       >
         Products
       </button>
+
 
       <button
         type="button"
@@ -200,7 +258,10 @@
     </aside>
 
 
-    <!-- MAIN -->
+
+    <!-- =====================================================
+         ADMIN MAIN
+    ====================================================== -->
 
     <section class="admin-main">
 
@@ -216,16 +277,38 @@
 
         <div class="admin-panel">
 
-          <h1>Dashboard</h1>
+          <h1>
+            Dashboard
+          </h1>
+
 
           <p style="color:#666;">
-            Welcome to Amani Fishing Wholesale administration.
+            Welcome to
+            <strong>Amiani's Fly Wholesalers</strong>
+            administration.
+          </p>
+
+
+          <p
+            style="
+              color:#666;
+              margin-top:8px;
+            "
+          >
+            Manage your fishing fly catalogue, categories,
+            stock and customer orders from this dashboard.
           </p>
 
         </div>
 
 
+
+        <!-- STATISTICS -->
+
         <div class="stat-grid">
+
+
+          <!-- CATEGORIES -->
 
           <div class="stat">
 
@@ -240,6 +323,8 @@
           </div>
 
 
+          <!-- PRODUCTS -->
+
           <div class="stat">
 
             <span>
@@ -252,6 +337,8 @@
 
           </div>
 
+
+          <!-- ORDERS -->
 
           <div class="stat">
 
@@ -266,6 +353,8 @@
           </div>
 
 
+          <!-- SALES -->
+
           <div class="stat">
 
             <span>
@@ -273,7 +362,7 @@
             </span>
 
             <strong id="statSales">
-              $0.00 per dozen
+              $0.00
             </strong>
 
           </div>
@@ -281,6 +370,7 @@
         </div>
 
       </div>
+
 
 
       <!-- ===================================================
@@ -293,20 +383,30 @@
         style="display:none;"
       >
 
+
+        <!-- CATEGORY FORM -->
+
         <div class="admin-panel">
 
           <h2>
             Add / Edit Category
           </h2>
 
+
           <form id="categoryForm">
+
+            <!-- Hidden ID -->
 
             <input
               type="hidden"
               name="id"
             >
 
+
             <div class="form-grid">
+
+
+              <!-- CATEGORY NAME -->
 
               <div class="form-group">
 
@@ -326,6 +426,8 @@
               </div>
 
 
+              <!-- CATEGORY IMAGE URL -->
+
               <div class="form-group">
 
                 <label for="categoryImageUrl">
@@ -343,6 +445,8 @@
               </div>
 
 
+              <!-- CATEGORY IMAGE UPLOAD -->
+
               <div class="form-group">
 
                 <label for="categoryImage">
@@ -359,6 +463,8 @@
 
               </div>
 
+
+              <!-- CATEGORY DESCRIPTION -->
 
               <div class="form-group full">
 
@@ -379,6 +485,8 @@
             </div>
 
 
+            <!-- CATEGORY BUTTONS -->
+
             <div
               style="
                 display:flex;
@@ -395,6 +503,7 @@
                 Save Category
               </button>
 
+
               <button
                 type="button"
                 id="clearCategory"
@@ -410,11 +519,15 @@
         </div>
 
 
+
+        <!-- CATEGORY LIST -->
+
         <div class="admin-panel">
 
           <h2>
             Categories
           </h2>
+
 
           <div
             id="catList"
@@ -428,6 +541,7 @@
       </div>
 
 
+
       <!-- ===================================================
            PRODUCTS
       ==================================================== -->
@@ -438,20 +552,30 @@
         style="display:none;"
       >
 
+
+        <!-- PRODUCT FORM -->
+
         <div class="admin-panel">
 
           <h2>
             Add / Edit Product
           </h2>
 
+
           <form id="productForm">
+
+            <!-- Hidden Product ID -->
 
             <input
               type="hidden"
               name="id"
             >
 
+
             <div class="form-grid">
+
+
+              <!-- PRODUCT NAME -->
 
               <div class="form-group">
 
@@ -470,6 +594,8 @@
 
               </div>
 
+
+              <!-- CATEGORY -->
 
               <div class="form-group">
 
@@ -493,10 +619,12 @@
               </div>
 
 
+              <!-- PRICE -->
+
               <div class="form-group">
 
                 <label for="productPrice">
-                  Price (USD per dozen)
+                  Price per Dozen (USD)
                 </label>
 
                 <input
@@ -510,13 +638,25 @@
                   required
                 >
 
+                <small
+                  style="
+                    display:block;
+                    color:#777;
+                    margin-top:6px;
+                  "
+                >
+                  Price for 12 fishing flies.
+                </small>
+
               </div>
 
+
+              <!-- STOCK -->
 
               <div class="form-group">
 
                 <label for="productStock">
-                  Stock
+                  Stock (Dozens)
                 </label>
 
                 <input
@@ -525,12 +665,25 @@
                   class="field"
                   type="number"
                   min="0"
+                  step="1"
                   value="0"
                   placeholder="0"
                 >
 
+                <small
+                  style="
+                    display:block;
+                    color:#777;
+                    margin-top:6px;
+                  "
+                >
+                  Enter the number of dozens available.
+                </small>
+
               </div>
 
+
+              <!-- IMAGE URL -->
 
               <div class="form-group">
 
@@ -549,6 +702,8 @@
               </div>
 
 
+              <!-- IMAGE UPLOAD -->
+
               <div class="form-group">
 
                 <label for="productImage">
@@ -565,6 +720,8 @@
 
               </div>
 
+
+              <!-- SIZES -->
 
               <div class="form-group">
 
@@ -583,6 +740,8 @@
               </div>
 
 
+              <!-- FEATURED -->
+
               <div class="form-group">
 
                 <label
@@ -592,6 +751,7 @@
                     align-items:center;
                     gap:8px;
                     margin-top:30px;
+                    cursor:pointer;
                   "
                 >
 
@@ -607,6 +767,8 @@
 
               </div>
 
+
+              <!-- DESCRIPTION -->
 
               <div class="form-group full">
 
@@ -627,6 +789,8 @@
             </div>
 
 
+            <!-- PRODUCT BUTTONS -->
+
             <div
               style="
                 display:flex;
@@ -643,6 +807,7 @@
                 Save Product
               </button>
 
+
               <button
                 type="button"
                 id="clearProduct"
@@ -658,11 +823,15 @@
         </div>
 
 
+
+        <!-- PRODUCT LIST -->
+
         <div class="admin-panel">
 
           <h2>
             Products
           </h2>
+
 
           <div
             id="productList"
@@ -674,6 +843,7 @@
         </div>
 
       </div>
+
 
 
       <!-- ===================================================
@@ -692,6 +862,7 @@
             Orders
           </h2>
 
+
           <div
             id="orderList"
             class="admin-list"
@@ -709,6 +880,7 @@
   </div>
 
 </div>
+
 
 </body>
 </html>

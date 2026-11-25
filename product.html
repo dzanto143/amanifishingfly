@@ -1,24 +1,124 @@
+```html
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Product | AMANI Fishing Wholesale</title>
-        <link rel="stylesheet" href="style.css">
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <script src="supabase-config.js"></script>
-    </head>
-    <body>
-        <div id="site-header"></div>
-        <main class="section">
-            <div class="container">
-                <div class="breadcrumb">
-                    <a href="shop.html">Shop</a> / Product
-                </div>
-                <div id="productDetail" class="product-detail"></div>
+
+<head>
+
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="description"
+        content="View fishing fly details, sizes, descriptions, stock and wholesale pricing from Amiani's Fly Wholesalers."
+    >
+
+    <meta
+        name="keywords"
+        content="Amiani's Fly Wholesalers, fishing flies, fly fishing, wholesale fishing flies, fly patterns, fishing fly sizes"
+    >
+
+    <meta
+        name="author"
+        content="Amiani's Fly Wholesalers"
+    >
+
+    <title>
+        Product | Amiani's Fly Wholesalers
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <!-- Supabase -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        defer
+    ></script>
+
+    <!-- Supabase configuration -->
+    <script
+        src="supabase-config.js"
+        defer
+    ></script>
+
+</head>
+
+
+<body>
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div id="site-header"></div>
+
+
+    <!-- =====================================================
+         PRODUCT
+    ====================================================== -->
+
+    <main class="section">
+
+        <div class="container">
+
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+
+                <a href="shop.html">
+                    Shop
+                </a>
+
+                <span aria-hidden="true">
+                    /
+                </span>
+
+                <span>
+                    Product
+                </span>
+
             </div>
-        </main>
-        <div id="site-footer"></div>
-        <script src="app.js"></script>
-    </body>
+
+
+            <!-- Product details are loaded by app.js -->
+            <div
+                id="productDetail"
+                class="product-detail"
+            >
+
+                <div class="notice">
+                    Loading product...
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+
+    <div id="site-footer"></div>
+
+
+    <!-- =====================================================
+         APPLICATION
+    ====================================================== -->
+
+    <script
+        src="app.js"
+        defer
+    ></script>
+
+</body>
+
 </html>
+```
