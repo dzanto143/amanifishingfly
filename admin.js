@@ -1,729 +1,2327 @@
-const ADMIN={
-  sb:window.AMANI_SUPABASE,
-  user:null,
-  async init(){
-    if(!this.sb)return;
-    const {data}=await this.sb.auth.getSession();
-    if(data.session) await this.showAdmin(data.session.user); else this.showLogin();
-    this.sb.auth.onAuthStateChange(async(_e,s)=>{if(s)await this.showAdmin(s.user);});
-  },
-  showLogin(){document.querySelector('#loginView').style.display='block';document.querySelector('#adminView').style.display='none';},
-  async showAdmin(user){
-    const {data,isAdmin}=await this.checkAdmin(user.id);
-    if(!isAdmin){await this.sb.auth.signOut();document.querySelector('#loginMessage').innerHTML='<div class="notice error">This account is not an approved AMANI admin.</div>';return;}
-    this.user=user;document.querySelector('#loginView').style.display='none';document.querySelector('#adminView').style.display='block';await this.refresh();
-  },
-  async checkAdmin(id){const {data,error}=await this.sb.from('admin_users').select('user_id').eq('user_id',id).maybeSingle();return {data,error,isAdmin:!!data};},
-  async refresh(){this.categories=await this.getCategories();this.products=await this.getProducts();this.orders=await this.getOrders();this.renderAll();},
-  async getCategories(){const {data,error}=await this.sb.from('categories').select('*').order('name');if(error)throw error;return data||[]},
-  async getProducts(){const {data,error}=await this.sb.from('products').select('*,categories(name)').order('created_at',{ascending:false});if(error)throw error;return data||[]},
-  async getOrders(){const {data,error}=await this.sb.from('orders').select('*').order('created_at',{ascending:false});if(error)throw error;return data||[]},
-  async upload(file){
-    if(!file)return '';
-    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-    const path=`admin/${this.user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const {error}=await this.sb.storage.from('product-images').upload(path,file,{upsert:false,contentType:file.type||'image/jpeg'});
-    if(error)throw error;
-    return this.sb.storage.from('product-images').getPublicUrl(path).data.publicUrl;
-  },
-  renderAll(){
-    document.querySelector('#catList').innerHTML=this.categories.map(c=>`<div class="admin-row"><img src="${c.image_url||AMANI.placeholder(c.name)}"><div><strong>${AMANI.esc(c.name)}</strong><div class="muted">${AMANI.esc(c.description||'')}</div></div><div class="actions"><button class="btn btn-light btn-sm" onclick="ADMIN.editCategory('${c.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="ADMIN.deleteCategory('${c.id}')">Delete</button></div></div>`).join('')||'<div class="empty">No categories.</div>';
-    document.querySelector('#productList').innerHTML=this.products.map(p=>`<div class="admin-row"><img src="${p.image_url||AMANI.placeholder(p.name)}"><div><strong>${AMANI.esc(p.name)}</strong><div>${AMANI.money(p.price)} · ${AMANI.esc(p.categories?.name||'No category')} · Stock ${p.stock}</div></div><div class="actions"><button class="btn btn-light btn-sm" onclick="ADMIN.editProduct('${p.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="ADMIN.deleteProduct('${p.id}')">Delete</button></div></div>`).join('')||'<div class="empty">No products.</div>';
-    document.querySelector('#orderList').innerHTML=this.orders.map(o=>`<div class="card" style="padding:18px"><div style="display:flex;justify-content:space-between;gap:15px"><div><strong>${AMANI.esc(o.customer_name)}</strong><div>${AMANI.esc(o.phone)} · ${AMANI.esc(o.email||'')}</div><div class="muted">${AMANI.esc(o.address)}</div></div><select class="field" style="max-width:180px" onchange="ADMIN.status('${o.id}',this.value)">${['pending','confirmed','paid','shipped','completed','cancelled'].map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('')}</select></div><hr><div>${(o.items||[]).map(i=>`${AMANI.esc(i.name)} × ${i.qty} — ${AMANI.money(i.price*i.qty)}`).join('<br>')}</div><strong>Total: ${AMANI.money(o.total)}</strong></div>`).join('')||'<div class="empty">No orders yet.</div>';
-    document.querySelector('#catSelect').innerHTML='<option value="">Select category</option>'+this.categories.map(c=>`<option value="${c.id}">${AMANI.esc(c.name)}</option>`).join('');
-    document.querySelector('#statCats').textContent=this.categories.length;document.querySelector('#statProducts').textContent=this.products.length;document.querySelector('#statOrders').textContent=this.orders.length;document.querySelector('#statSales').textContent=AMANI.money(this.orders.reduce((a,o)=>a+Number(o.total||0),0));
-  },
-  async saveCategory(e){
-    e.preventDefault();const f=new FormData(e.target);let image_url=f.get('image_url')||'';if(f.get('image')?.size)image_url=await this.upload(f.get('image'));
-    const payload={name:f.get('name'),slug:AMANI.slug(f.get('name')),description:f.get('description'),image_url};
-    const id=f.get('id');
-    const {error}=id?await this.sb.from('categories').update(payload).eq('id',id):await this.sb.from('categories').insert(payload);
-    if(error)alert(error.message);else{e.target.reset();e.target.querySelector('[name=id]').value='';await this.refresh();alert('Category saved.');}
-  },
-  async saveProduct(e){
-    e.preventDefault();const f=new FormData(e.target);let image_url=f.get('image_url')||'';if(f.get('image')?.size)image_url=await this.upload(f.get('image'));
-    const payload={name:f.get('name'),category_id:f.get('category_id')||null,price:Number(f.get('price')||0),image_url,sizes:f.get('sizes'),description:f.get('description'),stock:Number(f.get('stock')||0),featured:f.get('featured')==='on'};
-    const id=f.get('id');const {error}=id?await this.sb.from('products').update(payload).eq('id',id):await this.sb.from('products').insert(payload);
-    if(error)alert(error.message);else{e.target.reset();e.target.querySelector('[name=id]').value='';await this.refresh();alert('Product saved.');}
-  },
-  async editCategory(id){const c=this.categories.find(x=>x.id===id);const f=document.querySelector('#categoryForm');for(const k of ['id','name','description','image_url'])if(f.elements[k])f.elements[k].value=c[k]||'';f.scrollIntoView({behavior:'smooth'});},
-  async editProduct(id){const p=this.products.find(x=>x.id===id);const f=document.querySelector('#productForm');for(const k of ['id','name','category_id','price','image_url','sizes','description','stock'])if(f.elements[k])f.elements[k].value=p[k]??'';f.elements.featured.checked=!!p.featured;f.scrollIntoView({behavior:'smooth'});},
-  async deleteCategory(id){if(!confirm('Delete this category?'))return;const {error}=await this.sb.from('categories').delete().eq('id',id);if(error)alert(error.message);else await this.refresh();},
-  async deleteProduct(id){if(!confirm('Delete this product?'))return;const {error}=await this.sb.from('products').delete().eq('id',id);if(error)alert(error.message);else await this.refresh();},
-  async status(id,status){const {error}=await this.sb.from('orders').update({status}).eq('id',id);if(error)alert(error.message);else await this.refresh();}
-};
-document.addEventListener('DOMContentLoaded',()=>{
-  if(!document.querySelector('#adminView'))return;
-  ADMIN.init();
-  document.querySelector('#loginForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const {error}=await ADMIN.sb.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});if(error)document.querySelector('#loginMessage').innerHTML=`<div class="notice error">${AMANI.esc(error.message)}</div>`};
-  document.querySelector('#categoryForm').onsubmit=e=>ADMIN.saveCategory(e);
-  document.querySelector('#productForm').onsubmit=e=>ADMIN.saveProduct(e);
-  document.querySelector('#logout').onclick=()=>ADMIN.sb.auth.signOut();
-});
 // ============================================================
 // AMANI FISHING WHOLESALE
-// VERCEL ADMIN API
-//
-// This file runs SERVER-SIDE.
-// NEVER put SUPABASE_SERVICE_ROLE_KEY in frontend JavaScript.
+// ADMIN PANEL
+// DIRECT SUPABASE VERSION
 // ============================================================
 
-const { createClient } = require("@supabase/supabase-js");
-const crypto = require("crypto");
+(function () {
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+  "use strict";
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+  const ADMIN = {
 
-const COOKIE_NAME = "amani_admin_session";
+    sb: null,
 
-function json(res, status, data) {
-  res.status(status).json(data);
-}
+    user: null,
 
-function safeEqual(a, b) {
-  const aBuffer = Buffer.from(String(a));
-  const bBuffer = Buffer.from(String(b));
+    categories: [],
 
-  if (aBuffer.length !== bBuffer.length) {
-    return false;
-  }
+    products: [],
 
-  return crypto.timingSafeEqual(aBuffer, bBuffer);
-}
+    orders: [],
 
-function createSession() {
-  const payload = {
-    email: ADMIN_EMAIL,
-    exp: Date.now() + 1000 * 60 * 60 * 24
-  };
 
-  const encoded = Buffer
-    .from(JSON.stringify(payload))
-    .toString("base64url");
+    // ========================================================
+    // INITIALIZE
+    // ========================================================
 
-  const signature = crypto
-    .createHmac("sha256", process.env.ADMIN_SESSION_SECRET)
-    .update(encoded)
-    .digest("base64url");
+    async init() {
 
-  return `${encoded}.${signature}`;
-}
+      try {
 
-function verifySession(req) {
-  const cookieHeader = req.headers.cookie || "";
+        // Wait for Supabase CDN/config
+        if (!window.supabase) {
+          throw new Error(
+            "Supabase library has not loaded."
+          );
+        }
 
-  const cookies = {};
+        if (!window.AMANI_SUPABASE) {
 
-  cookieHeader.split(";").forEach(cookie => {
-    const index = cookie.indexOf("=");
+          if (
+            !window.AMANI_SUPABASE_URL ||
+            !window.AMANI_SUPABASE_ANON_KEY
+          ) {
+            throw new Error(
+              "Supabase configuration is missing."
+            );
+          }
 
-    if (index === -1) return;
+          window.AMANI_SUPABASE =
+            window.supabase.createClient(
+              window.AMANI_SUPABASE_URL,
+              window.AMANI_SUPABASE_ANON_KEY
+            );
+        }
 
-    const name = cookie.slice(0, index).trim();
-    const value = cookie.slice(index + 1).trim();
+        this.sb = window.AMANI_SUPABASE;
 
-    cookies[name] = decodeURIComponent(value);
-  });
 
-  const session = cookies[COOKIE_NAME];
+        // Check current session
+        const {
+          data,
+          error
+        } = await this.sb.auth.getSession();
 
-  if (!session) {
-    return false;
-  }
+        if (error) {
+          throw error;
+        }
 
-  const parts = session.split(".");
 
-  if (parts.length !== 2) {
-    return false;
-  }
+        if (data && data.session) {
 
-  const encoded = parts[0];
-  const signature = parts[1];
+          await this.showAdmin(
+            data.session.user
+          );
 
-  const expected = crypto
-    .createHmac("sha256", process.env.ADMIN_SESSION_SECRET)
-    .update(encoded)
-    .digest("base64url");
+        } else {
 
-  if (!safeEqual(signature, expected)) {
-    return false;
-  }
+          this.showLogin();
 
-  try {
-    const payload = JSON.parse(
-      Buffer.from(encoded, "base64url").toString()
-    );
+        }
 
-    if (payload.exp < Date.now()) {
-      return false;
-    }
 
-    return payload.email === ADMIN_EMAIL;
-  } catch {
-    return false;
-  }
-}
+        // Listen for login/logout
+        this.sb.auth.onAuthStateChange(
+          async (event, session) => {
 
-function requireAdmin(req, res) {
-  if (!verifySession(req)) {
-    json(res, 401, {
-      success: false,
-      message: "Administrator login required."
-    });
+            if (session) {
 
-    return false;
-  }
+              await this.showAdmin(
+                session.user
+              );
 
-  return true;
-}
+            } else {
 
-async function readBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = "";
+              this.user = null;
 
-    req.on("data", chunk => {
-      body += chunk;
-    });
+              this.showLogin();
 
-    req.on("end", () => {
-      if (!body) {
-        resolve({});
+            }
+
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          "ADMIN INIT ERROR:",
+          error
+        );
+
+        this.showLogin();
+
+        this.message(
+          "loginMessage",
+          error.message,
+          "error"
+        );
+
+      }
+
+    },
+
+
+    // ========================================================
+    // LOGIN VIEW
+    // ========================================================
+
+    showLogin() {
+
+      const loginView =
+        document.getElementById("loginView");
+
+      const adminView =
+        document.getElementById("adminView");
+
+      const logout =
+        document.getElementById("logout");
+
+
+      if (loginView) {
+        loginView.style.display = "block";
+      }
+
+      if (adminView) {
+        adminView.style.display = "none";
+      }
+
+      if (logout) {
+        logout.style.display = "none";
+      }
+
+    },
+
+
+    // ========================================================
+    // ADMIN VIEW
+    // ========================================================
+
+    async showAdmin(user) {
+
+      if (!user) {
+        this.showLogin();
         return;
       }
 
       try {
-        resolve(JSON.parse(body));
-      } catch {
-        reject(new Error("Invalid JSON."));
+
+        const isAdmin =
+          await this.checkAdmin(
+            user.id
+          );
+
+
+        if (!isAdmin) {
+
+          await this.sb.auth.signOut();
+
+          this.message(
+            "loginMessage",
+            "This account is not an approved AMANI administrator.",
+            "error"
+          );
+
+          return;
+        }
+
+
+        this.user = user;
+
+
+        document.getElementById(
+          "loginView"
+        ).style.display = "none";
+
+
+        document.getElementById(
+          "adminView"
+        ).style.display = "block";
+
+
+        document.getElementById(
+          "logout"
+        ).style.display = "inline-flex";
+
+
+        await this.refresh();
+
+
+      } catch (error) {
+
+        console.error(
+          "SHOW ADMIN ERROR:",
+          error
+        );
+
+        this.message(
+          "loginMessage",
+          error.message,
+          "error"
+        );
+
       }
-    });
 
-    req.on("error", reject);
-  });
-}
+    },
 
-module.exports = async function handler(req, res) {
 
-  res.setHeader(
-    "Cache-Control",
-    "no-store, no-cache, must-revalidate"
-  );
+    // ========================================================
+    // CHECK ADMIN
+    // ========================================================
 
-  // ============================================================
-  // LOGIN
-  // ============================================================
+    async checkAdmin(userId) {
 
-  if (req.method === "POST" && req.query.action === "login") {
+      const {
+        data,
+        error
+      } = await this.sb
+        .from("admin_users")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    try {
 
-      const body = await readBody(req);
-
-      const email = String(body.email || "").trim();
-      const password = String(body.password || "");
-
-      if (!email || !password) {
-        return json(res, 400, {
-          success: false,
-          message: "Email and password are required."
-        });
+      if (error) {
+        throw error;
       }
 
-      const emailCorrect = safeEqual(
-        email.toLowerCase(),
-        String(ADMIN_EMAIL).toLowerCase()
-      );
 
-      const passwordCorrect = safeEqual(
-        password,
-        ADMIN_PASSWORD
-      );
+      return !!data;
 
-      if (!emailCorrect || !passwordCorrect) {
-        return json(res, 401, {
-          success: false,
-          message: "Invalid administrator email or password."
-        });
+    },
+
+
+    // ========================================================
+    // REFRESH EVERYTHING
+    // ========================================================
+
+    async refresh() {
+
+      try {
+
+        const [
+          categories,
+          products,
+          orders
+        ] = await Promise.all([
+
+          this.getCategories(),
+
+          this.getProducts(),
+
+          this.getOrders()
+
+        ]);
+
+
+        this.categories = categories;
+
+        this.products = products;
+
+        this.orders = orders;
+
+
+        this.renderAll();
+
+
+      } catch (error) {
+
+        console.error(
+          "REFRESH ERROR:",
+          error
+        );
+
+        alert(
+          "Unable to load admin data:\n\n" +
+          error.message
+        );
+
       }
 
-      const session = createSession();
+    },
 
-      res.setHeader(
-        "Set-Cookie",
-        `${COOKIE_NAME}=${encodeURIComponent(session)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`
-      );
 
-      return json(res, 200, {
-        success: true,
-        message: "Login successful."
-      });
+    // ========================================================
+    // GET CATEGORIES
+    // ========================================================
 
-    } catch (error) {
+    async getCategories() {
 
-      console.error(error);
-
-      return json(res, 500, {
-        success: false,
-        message: "Login failed."
-      });
-    }
-  }
-
-  // ============================================================
-  // LOGOUT
-  // ============================================================
-
-  if (
-    req.method === "POST" &&
-    req.query.action === "logout"
-  ) {
-
-    res.setHeader(
-      "Set-Cookie",
-      `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
-    );
-
-    return json(res, 200, {
-      success: true
-    });
-  }
-
-  // ============================================================
-  // CHECK LOGIN
-  // ============================================================
-
-  if (
-    req.method === "GET" &&
-    req.query.action === "session"
-  ) {
-
-    return json(res, 200, {
-      loggedIn: verifySession(req)
-    });
-  }
-
-  // Everything below requires admin
-  if (!requireAdmin(req, res)) {
-    return;
-  }
-
-  // ============================================================
-  // GET ALL DATA
-  // ============================================================
-
-  if (
-    req.method === "GET" &&
-    req.query.action === "data"
-  ) {
-
-    const [
-      categoriesResult,
-      productsResult,
-      ordersResult
-    ] = await Promise.all([
-
-      supabase
+      const {
+        data,
+        error
+      } = await this.sb
         .from("categories")
         .select("*")
-        .order("created_at", {
-          ascending: false
-        }),
+        .order("name", {
+          ascending: true
+        });
 
-      supabase
+
+      if (error) {
+        throw error;
+      }
+
+
+      return data || [];
+
+    },
+
+
+    // ========================================================
+    // GET PRODUCTS
+    // ========================================================
+
+    async getProducts() {
+
+      const {
+        data,
+        error
+      } = await this.sb
         .from("products")
-        .select("*")
+        .select(`
+          *,
+          categories (
+            name
+          )
+        `)
         .order("created_at", {
           ascending: false
-        }),
+        });
 
-      supabase
+
+      if (error) {
+        throw error;
+      }
+
+
+      return data || [];
+
+    },
+
+
+    // ========================================================
+    // GET ORDERS
+    // ========================================================
+
+    async getOrders() {
+
+      const {
+        data,
+        error
+      } = await this.sb
         .from("orders")
         .select("*")
         .order("created_at", {
           ascending: false
-        })
+        });
 
-    ]);
 
-    if (categoriesResult.error) {
-      return json(res, 500, {
-        success: false,
-        message: categoriesResult.error.message
-      });
-    }
+      if (error) {
+        throw error;
+      }
 
-    if (productsResult.error) {
-      return json(res, 500, {
-        success: false,
-        message: productsResult.error.message
-      });
-    }
 
-    if (ordersResult.error) {
-      return json(res, 500, {
-        success: false,
-        message: ordersResult.error.message
-      });
-    }
+      return data || [];
 
-    return json(res, 200, {
-      success: true,
-      categories: categoriesResult.data,
-      products: productsResult.data,
-      orders: ordersResult.data
-    });
-  }
+    },
 
-  // ============================================================
-  // ADD CATEGORY
-  // ============================================================
 
-  if (
-    req.method === "POST" &&
-    req.query.action === "add-category"
-  ) {
+    // ========================================================
+    // IMAGE UPLOAD
+    // ========================================================
 
-    const body = await readBody(req);
+    async upload(file) {
 
-    const {
-      name,
-      slug,
-      description,
-      image_url
-    } = body;
+      if (!file) {
+        return "";
+      }
 
-    if (!name || !slug) {
-      return json(res, 400, {
-        success: false,
-        message: "Category name and slug are required."
-      });
-    }
 
-    const { data, error } = await supabase
-      .from("categories")
-      .insert({
-        name,
-        slug,
-        description: description || "",
-        image_url: image_url || ""
-      })
-      .select()
-      .single();
+      if (!this.user) {
+        throw new Error(
+          "You must be logged in to upload an image."
+        );
+      }
 
-    if (error) {
-      return json(res, 400, {
-        success: false,
-        message: error.message
-      });
-    }
 
-    return json(res, 200, {
-      success: true,
-      category: data
-    });
-  }
+      if (!file.type.startsWith("image/")) {
+        throw new Error(
+          "Please select a valid image."
+        );
+      }
 
-  // ============================================================
-  // UPDATE CATEGORY
-  // ============================================================
 
-  if (
-    req.method === "POST" &&
-    req.query.action === "update-category"
-  ) {
+      const maxSize =
+        10 * 1024 * 1024;
 
-    const body = await readBody(req);
 
-    if (!body.id) {
-      return json(res, 400, {
-        success: false,
-        message: "Category ID is required."
-      });
-    }
+      if (file.size > maxSize) {
+        throw new Error(
+          "Image is too large. Maximum size is 10MB."
+        );
+      }
 
-    const { data, error } = await supabase
-      .from("categories")
-      .update({
-        name: body.name,
-        slug: body.slug,
-        description: body.description || "",
-        image_url: body.image_url || ""
-      })
-      .eq("id", body.id)
-      .select()
-      .single();
 
-    if (error) {
-      return json(res, 400, {
-        success: false,
-        message: error.message
-      });
-    }
+      const extension =
+        (
+          file.name
+            .split(".")
+            .pop() || "jpg"
+        )
+          .toLowerCase()
+          .replace(
+            /[^a-z0-9]/g,
+            ""
+          ) || "jpg";
 
-    return json(res, 200, {
-      success: true,
-      category: data
-    });
-  }
 
-  // ============================================================
-  // DELETE CATEGORY
-  // ============================================================
+      const safeName =
+        file.name
+          .replace(
+            /[^a-zA-Z0-9._-]/g,
+            "-"
+          );
 
-  if (
-    req.method === "POST" &&
-    req.query.action === "delete-category"
-  ) {
 
-    const body = await readBody(req);
+      const path =
+        "admin/" +
+        this.user.id +
+        "/" +
+        Date.now() +
+        "-" +
+        crypto.randomUUID() +
+        "-" +
+        safeName;
 
-    const { error } = await supabase
-      .from("categories")
-      .delete()
-      .eq("id", body.id);
 
-    if (error) {
-      return json(res, 400, {
-        success: false,
-        message: error.message
-      });
-    }
+      const {
+        error
+      } = await this.sb
+        .storage
+        .from("product-images")
+        .upload(
+          path,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false,
+            contentType:
+              file.type ||
+              "image/jpeg"
+          }
+        );
 
-    return json(res, 200, {
-      success: true
-    });
-  }
 
-  // ============================================================
-  // ADD PRODUCT
-  // ============================================================
+      if (error) {
+        throw error;
+      }
 
-  if (
-    req.method === "POST" &&
-    req.query.action === "add-product"
-  ) {
 
-    const body = await readBody(req);
+      const {
+        data
+      } = this.sb
+        .storage
+        .from("product-images")
+        .getPublicUrl(path);
 
-    if (!body.name) {
-      return json(res, 400, {
-        success: false,
-        message: "Product name is required."
-      });
-    }
 
-    const { data, error } = await supabase
-      .from("products")
-      .insert({
-        name: body.name,
-        category_id: body.category_id || null,
-        price: Number(body.price || 0),
-        image_url: body.image_url || "",
-        sizes: body.sizes || "",
-        description: body.description || "",
-        stock: Number(body.stock || 0),
-        featured: Boolean(body.featured)
-      })
-      .select()
-      .single();
+      return data.publicUrl;
 
-    if (error) {
-      return json(res, 400, {
-        success: false,
-        message: error.message
-      });
-    }
+    },
 
-    return json(res, 200, {
-      success: true,
-      product: data
-    });
-  }
 
-  // ============================================================
-  // UPDATE PRODUCT
-  // ============================================================
+    // ========================================================
+    // RENDER EVERYTHING
+    // ========================================================
 
-  if (
-    req.method === "POST" &&
-    req.query.action === "update-product"
-  ) {
+    renderAll() {
 
-    const body = await readBody(req);
+      this.renderCategories();
 
-    if (!body.id) {
-      return json(res, 400, {
-        success: false,
-        message: "Product ID is required."
-      });
-    }
+      this.renderProducts();
 
-    const { data, error } = await supabase
-      .from("products")
-      .update({
-        name: body.name,
-        category_id: body.category_id || null,
-        price: Number(body.price || 0),
-        image_url: body.image_url || "",
-        sizes: body.sizes || "",
-        description: body.description || "",
-        stock: Number(body.stock || 0),
-        featured: Boolean(body.featured)
-      })
-      .eq("id", body.id)
-      .select()
-      .single();
+      this.renderOrders();
 
-    if (error) {
-      return json(res, 400, {
-        success: false,
-        message: error.message
-      });
-    }
+      this.renderCategorySelect();
 
-    return json(res, 200, {
-      success: true,
-      product: data
-    });
-  }
+      this.renderStats();
 
-  // ============================================================
-  // DELETE PRODUCT
-  // ============================================================
+    },
 
-  if (
-    req.method === "POST" &&
-    req.query.action === "delete-product"
-  ) {
 
-    const body = await readBody(req);
+    // ========================================================
+    // CATEGORY LIST
+    // ========================================================
 
-    const { error } = await supabase
-      .from("products")
-      .delete()
-      .eq("id", body.id);
+    renderCategories() {
 
-    if (error) {
-      return json(res, 400, {
-        success: false,
-        message: error.message
-      });
-    }
+      const list =
+        document.getElementById(
+          "catList"
+        );
 
-    return json(res, 200, {
-      success: true
-    });
-  }
 
-  // ============================================================
-  // UPDATE ORDER STATUS
-  // ============================================================
+      if (!list) {
+        return;
+      }
 
-  if (
-    req.method === "POST" &&
-    req.query.action === "update-order"
-  ) {
 
-    const body = await readBody(req);
+      if (!this.categories.length) {
 
-    const { data, error } = await supabase
-      .from("orders")
-      .update({
-        status: body.status
-      })
-      .eq("id", body.id)
-      .select()
-      .single();
+        list.innerHTML =
+          '<div class="empty">No categories yet.</div>';
 
-    if (error) {
-      return json(res, 400, {
-        success: false,
-        message: error.message
-      });
-    }
+        return;
 
-    return json(res, 200, {
-      success: true,
-      order: data
-    });
-  }
+      }
 
-  // ============================================================
-  // UPLOAD IMAGE
-  // ============================================================
 
-  if (
-    req.method === "POST" &&
-    req.query.action === "upload-image"
-  ) {
+      list.innerHTML =
+        this.categories
+          .map(category => {
 
-    const body = await readBody(req);
+            const image =
+              category.image_url ||
+              this.placeholder(
+                category.name
+              );
 
-    if (!body.filename || !body.base64) {
-      return json(res, 400, {
-        success: false,
-        message: "Image filename and image data are required."
-      });
-    }
 
-    const cleanBase64 = body.base64.replace(
-      /^data:[^;]+;base64,/,
-      ""
-    );
+            return `
+              <div class="admin-row">
 
-    const buffer = Buffer.from(
-      cleanBase64,
-      "base64"
-    );
+                <img
+                  src="${this.escapeAttr(image)}"
+                  alt="${this.escapeAttr(category.name)}"
+                  onerror="this.src=ADMIN.placeholder('${this.escapeAttr(category.name)}')"
+                >
 
-    const extension =
-      String(body.filename)
-        .split(".")
-        .pop()
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "") || "jpg";
+                <div style="flex:1;min-width:0;">
 
-    const fileName =
-      `admin/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+                  <strong>
+                    ${this.escape(category.name)}
+                  </strong>
 
-    const { error } = await supabase.storage
-      .from("product-images")
-      .upload(
-        fileName,
-        buffer,
-        {
-          contentType:
-            body.contentType || "image/jpeg",
-          upsert: false
+                  <div class="muted">
+                    ${this.escape(
+                      category.description || ""
+                    )}
+                  </div>
+
+                  <small class="muted">
+                    ${this.escape(
+                      category.slug || ""
+                    )}
+                  </small>
+
+                </div>
+
+                <div class="actions">
+
+                  <button
+                    type="button"
+                    class="btn btn-light btn-sm"
+                    onclick="ADMIN.editCategory('${category.id}')"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    onclick="ADMIN.deleteCategory('${category.id}')"
+                  >
+                    Delete
+                  </button>
+
+                </div>
+
+              </div>
+            `;
+
+          })
+          .join("");
+
+    },
+
+
+    // ========================================================
+    // PRODUCT LIST
+    // ========================================================
+
+    renderProducts() {
+
+      const list =
+        document.getElementById(
+          "productList"
+        );
+
+
+      if (!list) {
+        return;
+      }
+
+
+      if (!this.products.length) {
+
+        list.innerHTML =
+          '<div class="empty">No products yet.</div>';
+
+        return;
+
+      }
+
+
+      list.innerHTML =
+        this.products
+          .map(product => {
+
+            const image =
+              product.image_url ||
+              this.placeholder(
+                product.name
+              );
+
+
+            const category =
+              product.categories &&
+              product.categories.name
+                ? product.categories.name
+                : "No category";
+
+
+            return `
+              <div class="admin-row">
+
+                <img
+                  src="${this.escapeAttr(image)}"
+                  alt="${this.escapeAttr(product.name)}"
+                  onerror="this.src=ADMIN.placeholder('${this.escapeAttr(product.name)}')"
+                >
+
+                <div style="flex:1;min-width:0;">
+
+                  <strong>
+                    ${this.escape(product.name)}
+                  </strong>
+
+                  <div>
+
+                    <strong>
+                      ${this.money(product.price)}
+                    </strong>
+
+                    &nbsp; · &nbsp;
+
+                    ${this.escape(category)}
+
+                    &nbsp; · &nbsp;
+
+                    Stock:
+                    ${Number(product.stock || 0)}
+
+                  </div>
+
+                  ${
+                    product.featured
+                      ? `
+                        <span
+                          style="
+                            display:inline-block;
+                            margin-top:5px;
+                            padding:3px 8px;
+                            border-radius:20px;
+                            background:#d7a83e;
+                            color:#111;
+                            font-size:12px;
+                          "
+                        >
+                          Featured
+                        </span>
+                      `
+                      : ""
+                  }
+
+                </div>
+
+                <div class="actions">
+
+                  <button
+                    type="button"
+                    class="btn btn-light btn-sm"
+                    onclick="ADMIN.editProduct('${product.id}')"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    onclick="ADMIN.deleteProduct('${product.id}')"
+                  >
+                    Delete
+                  </button>
+
+                </div>
+
+              </div>
+            `;
+
+          })
+          .join("");
+
+    },
+
+
+    // ========================================================
+    // ORDER LIST
+    // ========================================================
+
+    renderOrders() {
+
+      const list =
+        document.getElementById(
+          "orderList"
+        );
+
+
+      if (!list) {
+        return;
+      }
+
+
+      if (!this.orders.length) {
+
+        list.innerHTML =
+          '<div class="empty">No orders yet.</div>';
+
+        return;
+
+      }
+
+
+      list.innerHTML =
+        this.orders
+          .map(order => {
+
+            let items = [];
+
+
+            try {
+
+              items =
+                Array.isArray(order.items)
+                  ? order.items
+                  : [];
+
+            } catch (e) {
+
+              items = [];
+
+            }
+
+
+            const itemsHtml =
+              items.length
+
+                ? items
+                    .map(item => {
+
+                      const qty =
+                        Number(
+                          item.qty || 0
+                        );
+
+                      const price =
+                        Number(
+                          item.price || 0
+                        );
+
+
+                      return `
+                        <div>
+                          ${this.escape(
+                            item.name || "Item"
+                          )}
+                          × ${qty}
+                          —
+                          ${this.money(
+                            price * qty
+                          )}
+                        </div>
+                      `;
+
+                    })
+                    .join("")
+
+                : "<div>No item details.</div>";
+
+
+            return `
+              <div
+                class="card"
+                style="padding:18px;margin-bottom:15px;"
+              >
+
+                <div
+                  style="
+                    display:flex;
+                    justify-content:space-between;
+                    gap:15px;
+                    flex-wrap:wrap;
+                  "
+                >
+
+                  <div>
+
+                    <strong>
+                      ${this.escape(
+                        order.customer_name
+                      )}
+                    </strong>
+
+                    <div>
+                      ${this.escape(
+                        order.phone
+                      )}
+                      ${
+                        order.email
+                          ? " · " +
+                            this.escape(
+                              order.email
+                            )
+                          : ""
+                      }
+                    </div>
+
+                    <div class="muted">
+                      ${this.escape(
+                        order.address
+                      )}
+                    </div>
+
+                    ${
+                      order.notes
+                        ? `
+                          <div
+                            style="
+                              margin-top:8px;
+                            "
+                          >
+                            <strong>
+                              Notes:
+                            </strong>
+                            ${this.escape(
+                              order.notes
+                            )}
+                          </div>
+                        `
+                        : ""
+                    }
+
+                  </div>
+
+
+                  <select
+                    class="field"
+                    style="max-width:180px;"
+                    onchange="ADMIN.status('${order.id}', this.value)"
+                  >
+
+                    ${
+                      [
+                        "pending",
+                        "confirmed",
+                        "paid",
+                        "shipped",
+                        "completed",
+                        "cancelled"
+                      ]
+                        .map(
+                          status => `
+                            <option
+                              value="${status}"
+                              ${
+                                order.status ===
+                                status
+                                  ? "selected"
+                                  : ""
+                              }
+                            >
+                              ${status}
+                            </option>
+                          `
+                        )
+                        .join("")
+                    }
+
+                  </select>
+
+                </div>
+
+
+                <hr>
+
+
+                <div>
+                  ${itemsHtml}
+                </div>
+
+
+                <div
+                  style="
+                    margin-top:12px;
+                    font-size:18px;
+                  "
+                >
+                  <strong>
+                    Total:
+                    ${this.money(order.total)}
+                  </strong>
+                </div>
+
+              </div>
+            `;
+
+          })
+          .join("");
+
+    },
+
+
+    // ========================================================
+    // CATEGORY SELECT
+    // ========================================================
+
+    renderCategorySelect() {
+
+      const select =
+        document.getElementById(
+          "catSelect"
+        );
+
+
+      if (!select) {
+        return;
+      }
+
+
+      const current =
+        select.value;
+
+
+      select.innerHTML =
+        '<option value="">Select category</option>' +
+        this.categories
+          .map(
+            category => `
+              <option value="${category.id}">
+                ${this.escape(category.name)}
+              </option>
+            `
+          )
+          .join("");
+
+
+      if (
+        current &&
+        this.categories.some(
+          category =>
+            category.id === current
+        )
+      ) {
+        select.value = current;
+      }
+
+    },
+
+
+    // ========================================================
+    // STATS
+    // ========================================================
+
+    renderStats() {
+
+      const cats =
+        document.getElementById(
+          "statCats"
+        );
+
+      const products =
+        document.getElementById(
+          "statProducts"
+        );
+
+      const orders =
+        document.getElementById(
+          "statOrders"
+        );
+
+      const sales =
+        document.getElementById(
+          "statSales"
+        );
+
+
+      if (cats) {
+        cats.textContent =
+          this.categories.length;
+      }
+
+
+      if (products) {
+        products.textContent =
+          this.products.length;
+      }
+
+
+      if (orders) {
+        orders.textContent =
+          this.orders.length;
+      }
+
+
+      if (sales) {
+
+        const total =
+          this.orders.reduce(
+            (sum, order) =>
+              sum +
+              Number(
+                order.total || 0
+              ),
+            0
+          );
+
+
+        sales.textContent =
+          this.money(total);
+
+      }
+
+    },
+
+
+    // ========================================================
+    // SAVE CATEGORY
+    // ========================================================
+
+    async saveCategory(event) {
+
+      event.preventDefault();
+
+
+      const form =
+        event.target;
+
+
+      const button =
+        form.querySelector(
+          'button[type="submit"]'
+        );
+
+
+      try {
+
+        button.disabled = true;
+
+        button.textContent =
+          "Saving...";
+
+
+        const data =
+          new FormData(form);
+
+
+        const id =
+          String(
+            data.get("id") || ""
+          ).trim();
+
+
+        const name =
+          String(
+            data.get("name") || ""
+          ).trim();
+
+
+        if (!name) {
+          throw new Error(
+            "Category name is required."
+          );
         }
+
+
+        let imageUrl =
+          String(
+            data.get("image_url") || ""
+          ).trim();
+
+
+        const image =
+          data.get("image");
+
+
+        if (
+          image &&
+          image instanceof File &&
+          image.size > 0
+        ) {
+
+          imageUrl =
+            await this.upload(image);
+
+        }
+
+
+        const payload = {
+
+          name,
+
+          slug:
+            this.slug(name),
+
+          description:
+            String(
+              data.get("description") ||
+              ""
+            ).trim(),
+
+          image_url:
+            imageUrl
+
+        };
+
+
+        let result;
+
+
+        if (id) {
+
+          result =
+            await this.sb
+              .from("categories")
+              .update(payload)
+              .eq("id", id);
+
+        } else {
+
+          result =
+            await this.sb
+              .from("categories")
+              .insert(payload);
+
+        }
+
+
+        if (result.error) {
+          throw result.error;
+        }
+
+
+        this.clearCategoryForm();
+
+        await this.refresh();
+
+
+        alert(
+          id
+            ? "Category updated successfully."
+            : "Category added successfully."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "SAVE CATEGORY:",
+          error
+        );
+
+        alert(
+          "Could not save category:\n\n" +
+          error.message
+        );
+
+      } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+          "Save Category";
+
+      }
+
+    },
+
+
+    // ========================================================
+    // SAVE PRODUCT
+    // ========================================================
+
+    async saveProduct(event) {
+
+      event.preventDefault();
+
+
+      const form =
+        event.target;
+
+
+      const button =
+        form.querySelector(
+          'button[type="submit"]'
+        );
+
+
+      try {
+
+        button.disabled = true;
+
+        button.textContent =
+          "Saving...";
+
+
+        const data =
+          new FormData(form);
+
+
+        const id =
+          String(
+            data.get("id") || ""
+          ).trim();
+
+
+        const name =
+          String(
+            data.get("name") || ""
+          ).trim();
+
+
+        if (!name) {
+          throw new Error(
+            "Product name is required."
+          );
+        }
+
+
+        const categoryId =
+          String(
+            data.get("category_id") ||
+            ""
+          ).trim();
+
+
+        if (!categoryId) {
+          throw new Error(
+            "Please select a category."
+          );
+        }
+
+
+        const price =
+          Number(
+            data.get("price") || 0
+          );
+
+
+        if (
+          !Number.isFinite(price) ||
+          price < 0
+        ) {
+          throw new Error(
+            "Please enter a valid price."
+          );
+        }
+
+
+        const stock =
+          Math.max(
+            0,
+            Number(
+              data.get("stock") || 0
+            )
+          );
+
+
+        let imageUrl =
+          String(
+            data.get("image_url") || ""
+          ).trim();
+
+
+        const image =
+          data.get("image");
+
+
+        if (
+          image &&
+          image instanceof File &&
+          image.size > 0
+        ) {
+
+          imageUrl =
+            await this.upload(image);
+
+        }
+
+
+        const payload = {
+
+          name,
+
+          category_id:
+            categoryId,
+
+          price,
+
+          image_url:
+            imageUrl,
+
+          sizes:
+            String(
+              data.get("sizes") ||
+              ""
+            ).trim(),
+
+          description:
+            String(
+              data.get("description") ||
+              ""
+            ).trim(),
+
+          stock,
+
+          featured:
+            data.get("featured") === "on"
+
+        };
+
+
+        let result;
+
+
+        if (id) {
+
+          result =
+            await this.sb
+              .from("products")
+              .update(payload)
+              .eq("id", id);
+
+        } else {
+
+          result =
+            await this.sb
+              .from("products")
+              .insert(payload);
+
+        }
+
+
+        if (result.error) {
+          throw result.error;
+        }
+
+
+        this.clearProductForm();
+
+        await this.refresh();
+
+
+        alert(
+          id
+            ? "Product updated successfully."
+            : "Product added successfully."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "SAVE PRODUCT:",
+          error
+        );
+
+        alert(
+          "Could not save product:\n\n" +
+          error.message
+        );
+
+      } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+          "Save Product";
+
+      }
+
+    },
+
+
+    // ========================================================
+    // EDIT CATEGORY
+    // ========================================================
+
+    editCategory(id) {
+
+      const category =
+        this.categories.find(
+          item => item.id === id
+        );
+
+
+      if (!category) {
+        return;
+      }
+
+
+      const form =
+        document.getElementById(
+          "categoryForm"
+        );
+
+
+      form.elements.id.value =
+        category.id;
+
+      form.elements.name.value =
+        category.name || "";
+
+      form.elements.description.value =
+        category.description || "";
+
+      form.elements.image_url.value =
+        category.image_url || "";
+
+      form.elements.image.value =
+        "";
+
+
+      this.showTab(
+        "categories"
       );
 
-    if (error) {
-      return json(res, 400, {
-        success: false,
-        message: error.message
+
+      form.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
       });
+
+    },
+
+
+    // ========================================================
+    // EDIT PRODUCT
+    // ========================================================
+
+    editProduct(id) {
+
+      const product =
+        this.products.find(
+          item => item.id === id
+        );
+
+
+      if (!product) {
+        return;
+      }
+
+
+      const form =
+        document.getElementById(
+          "productForm"
+        );
+
+
+      form.elements.id.value =
+        product.id;
+
+      form.elements.name.value =
+        product.name || "";
+
+      form.elements.category_id.value =
+        product.category_id || "";
+
+      form.elements.price.value =
+        product.price ?? "";
+
+      form.elements.image_url.value =
+        product.image_url || "";
+
+      form.elements.sizes.value =
+        product.sizes || "";
+
+      form.elements.description.value =
+        product.description || "";
+
+      form.elements.stock.value =
+        product.stock ?? 0;
+
+      form.elements.featured.checked =
+        !!product.featured;
+
+      form.elements.image.value =
+        "";
+
+
+      this.showTab(
+        "products"
+      );
+
+
+      form.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
+    },
+
+
+    // ========================================================
+    // DELETE CATEGORY
+    // ========================================================
+
+    async deleteCategory(id) {
+
+      const category =
+        this.categories.find(
+          item => item.id === id
+        );
+
+
+      if (!category) {
+        return;
+      }
+
+
+      const confirmed =
+        confirm(
+          `Delete category "${category.name}"?`
+        );
+
+
+      if (!confirmed) {
+        return;
+      }
+
+
+      try {
+
+        const {
+          error
+        } = await this.sb
+          .from("categories")
+          .delete()
+          .eq("id", id);
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        await this.refresh();
+
+
+        alert(
+          "Category deleted successfully."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "DELETE CATEGORY:",
+          error
+        );
+
+        alert(
+          "Could not delete category:\n\n" +
+          error.message
+        );
+
+      }
+
+    },
+
+
+    // ========================================================
+    // DELETE PRODUCT
+    // ========================================================
+
+    async deleteProduct(id) {
+
+      const product =
+        this.products.find(
+          item => item.id === id
+        );
+
+
+      if (!product) {
+        return;
+      }
+
+
+      const confirmed =
+        confirm(
+          `Delete product "${product.name}"?`
+        );
+
+
+      if (!confirmed) {
+        return;
+      }
+
+
+      try {
+
+        const {
+          error
+        } = await this.sb
+          .from("products")
+          .delete()
+          .eq("id", id);
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        await this.refresh();
+
+
+        alert(
+          "Product deleted successfully."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "DELETE PRODUCT:",
+          error
+        );
+
+        alert(
+          "Could not delete product:\n\n" +
+          error.message
+        );
+
+      }
+
+    },
+
+
+    // ========================================================
+    // UPDATE ORDER STATUS
+    // ========================================================
+
+    async status(id, status) {
+
+      try {
+
+        const {
+          error
+        } = await this.sb
+          .from("orders")
+          .update({
+            status
+          })
+          .eq("id", id);
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        await this.refresh();
+
+
+      } catch (error) {
+
+        console.error(
+          "ORDER STATUS:",
+          error
+        );
+
+        alert(
+          "Could not update order:\n\n" +
+          error.message
+        );
+
+        await this.refresh();
+
+      }
+
+    },
+
+
+    // ========================================================
+    // CLEAR CATEGORY FORM
+    // ========================================================
+
+    clearCategoryForm() {
+
+      const form =
+        document.getElementById(
+          "categoryForm"
+        );
+
+
+      if (!form) {
+        return;
+      }
+
+
+      form.reset();
+
+      form.elements.id.value = "";
+
+    },
+
+
+    // ========================================================
+    // CLEAR PRODUCT FORM
+    // ========================================================
+
+    clearProductForm() {
+
+      const form =
+        document.getElementById(
+          "productForm"
+        );
+
+
+      if (!form) {
+        return;
+      }
+
+
+      form.reset();
+
+      form.elements.id.value = "";
+
+      form.elements.stock.value =
+        0;
+
+      form.elements.featured.checked =
+        false;
+
+    },
+
+
+    // ========================================================
+    // TAB
+    // ========================================================
+
+    showTab(id) {
+
+      document
+        .querySelectorAll(
+          ".admin-tab"
+        )
+        .forEach(tab => {
+
+          tab.style.display =
+            "none";
+
+        });
+
+
+      const selected =
+        document.getElementById(
+          id
+        );
+
+
+      if (selected) {
+
+        selected.style.display =
+          "block";
+
+      }
+
+
+      document
+        .querySelectorAll(
+          ".admin-sidebar button"
+        )
+        .forEach(button => {
+
+          button.classList.remove(
+            "active"
+          );
+
+
+          if (
+            button.dataset.tab === id
+          ) {
+
+            button.classList.add(
+              "active"
+            );
+
+          }
+
+        });
+
+    },
+
+
+    // ========================================================
+    // LOGOUT
+    // ========================================================
+
+    async logout() {
+
+      try {
+
+        await this.sb.auth.signOut();
+
+      } catch (error) {
+
+        console.error(
+          "LOGOUT:",
+          error
+        );
+
+      }
+
+    },
+
+
+    // ========================================================
+    // SLUG
+    // ========================================================
+
+    slug(value) {
+
+      return String(value || "")
+        .toLowerCase()
+        .trim()
+        .replace(
+          /[^a-z0-9]+/g,
+          "-"
+        )
+        .replace(
+          /^-+|-+$/g,
+          ""
+        );
+
+    },
+
+
+    // ========================================================
+    // MONEY
+    // ========================================================
+
+    money(value) {
+
+      const number =
+        Number(value || 0);
+
+
+      return new Intl.NumberFormat(
+        "en-US",
+        {
+          style: "currency",
+          currency: "USD"
+        }
+      ).format(number);
+
+    },
+
+
+    // ========================================================
+    // ESCAPE HTML
+    // ========================================================
+
+    escape(value) {
+
+      return String(
+        value ?? ""
+      )
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+        .replace(
+          /</g,
+          "&lt;"
+        )
+        .replace(
+          />/g,
+          "&gt;"
+        )
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+        .replace(
+          /'/g,
+          "&#039;"
+        );
+
+    },
+
+
+    // ========================================================
+    // ESCAPE ATTRIBUTE
+    // ========================================================
+
+    escapeAttr(value) {
+
+      return this.escape(
+        value
+      );
+
+    },
+
+
+    // ========================================================
+    // PLACEHOLDER
+    // ========================================================
+
+    placeholder(name) {
+
+      const text =
+        String(
+          name || "AMANI"
+        )
+          .slice(0, 25);
+
+
+      const svg = `
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="800"
+          height="600"
+          viewBox="0 0 800 600"
+        >
+
+          <rect
+            width="800"
+            height="600"
+            fill="#eeeeee"
+          />
+
+          <text
+            x="400"
+            y="300"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-family="Arial"
+            font-size="40"
+            fill="#777"
+          >
+            ${text}
+          </text>
+
+        </svg>
+      `;
+
+
+      return (
+        "data:image/svg+xml;charset=UTF-8," +
+        encodeURIComponent(svg)
+      );
+
+    },
+
+
+    // ========================================================
+    // MESSAGE
+    // ========================================================
+
+    message(
+      elementId,
+      text,
+      type = "error"
+    ) {
+
+      const element =
+        document.getElementById(
+          elementId
+        );
+
+
+      if (!element) {
+        return;
+      }
+
+
+      element.innerHTML = `
+        <div class="notice ${type}">
+          ${this.escape(text)}
+        </div>
+      `;
+
     }
 
-    const {
-      data: publicUrl
-    } = supabase.storage
-      .from("product-images")
-      .getPublicUrl(fileName);
+  };
 
-    return json(res, 200, {
-      success: true,
-      url: publicUrl.publicUrl
-    });
-  }
 
-  return json(res, 404, {
-    success: false,
-    message: "Unknown admin action."
-  });
-};
+  // ==========================================================
+  // MAKE GLOBAL
+  // ==========================================================
+
+  window.ADMIN = ADMIN;
+
+
+  // ==========================================================
+  // DOM READY
+  // ==========================================================
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+      // Give defer-loaded scripts a moment
+      // to initialize the Supabase client.
+
+      const start = () => {
+
+        ADMIN.init();
+
+      };
+
+
+      if (
+        window.AMANI_SUPABASE ||
+        (
+          window.supabase &&
+          window.AMANI_SUPABASE_URL &&
+          window.AMANI_SUPABASE_ANON_KEY
+        )
+      ) {
+
+        start();
+
+      } else {
+
+        setTimeout(
+          start,
+          500
+        );
+
+      }
+
+
+      // ======================================================
+      // LOGIN
+      // ======================================================
+
+      const loginForm =
+        document.getElementById(
+          "loginForm"
+        );
+
+
+      if (loginForm) {
+
+        loginForm.addEventListener(
+          "submit",
+          async event => {
+
+            event.preventDefault();
+
+
+            const button =
+              document.getElementById(
+                "loginButton"
+              );
+
+
+            try {
+
+              button.disabled = true;
+
+              button.textContent =
+                "Logging in...";
+
+
+              const data =
+                new FormData(
+                  loginForm
+                );
+
+
+              const email =
+                String(
+                  data.get("email") ||
+                  ""
+                ).trim();
+
+
+              const password =
+                String(
+                  data.get("password") ||
+                  ""
+                );
+
+
+              if (
+                !email ||
+                !password
+              ) {
+
+                throw new Error(
+                  "Enter your email and password."
+                );
+
+              }
+
+
+              if (!ADMIN.sb) {
+
+                throw new Error(
+                  "Supabase is not connected. Check config.js and your Supabase key."
+                );
+
+              }
+
+
+              const {
+                error
+              } =
+                await ADMIN.sb.auth
+                  .signInWithPassword({
+                    email,
+                    password
+                  });
+
+
+              if (error) {
+                throw error;
+              }
+
+
+              loginForm.reset();
+
+
+            } catch (error) {
+
+              console.error(
+                "LOGIN:",
+                error
+              );
+
+
+              ADMIN.message(
+                "loginMessage",
+                error.message,
+                "error"
+              );
+
+            } finally {
+
+              button.disabled =
+                false;
+
+              button.textContent =
+                "Login";
+
+            }
+
+          }
+        );
+
+      }
+
+
+      // ======================================================
+      // LOGOUT
+      // ======================================================
+
+      const logout =
+        document.getElementById(
+          "logout"
+        );
+
+
+      if (logout) {
+
+        logout.addEventListener(
+          "click",
+          () => ADMIN.logout()
+        );
+
+      }
+
+
+      // ======================================================
+      // CATEGORY FORM
+      // ======================================================
+
+      const categoryForm =
+        document.getElementById(
+          "categoryForm"
+        );
+
+
+      if (categoryForm) {
+
+        categoryForm.addEventListener(
+          "submit",
+          event =>
+            ADMIN.saveCategory(
+              event
+            )
+        );
+
+      }
+
+
+      // ======================================================
+      // PRODUCT FORM
+      // ======================================================
+
+      const productForm =
+        document.getElementById(
+          "productForm"
+        );
+
+
+      if (productForm) {
+
+        productForm.addEventListener(
+          "submit",
+          event =>
+            ADMIN.saveProduct(
+              event
+            )
+        );
+
+      }
+
+
+      // ======================================================
+      // CLEAR BUTTONS
+      // ======================================================
+
+      const clearCategory =
+        document.getElementById(
+          "clearCategory"
+        );
+
+
+      if (clearCategory) {
+
+        clearCategory.addEventListener(
+          "click",
+          () =>
+            ADMIN.clearCategoryForm()
+        );
+
+      }
+
+
+      const clearProduct =
+        document.getElementById(
+          "clearProduct"
+        );
+
+
+      if (clearProduct) {
+
+        clearProduct.addEventListener(
+          "click",
+          () =>
+            ADMIN.clearProductForm()
+        );
+
+      }
+
+
+      // ======================================================
+      // SIDEBAR
+      // ======================================================
+
+      document
+        .querySelectorAll(
+          ".admin-sidebar button[data-tab]"
+        )
+        .forEach(button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              ADMIN.showTab(
+                button.dataset.tab
+              );
+
+            }
+          );
+
+        });
+
+    }
+  );
+
+})();
