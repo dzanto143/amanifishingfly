@@ -20,13 +20,19 @@
   </script>
 
   <!-- Configuration -->
-  <script src="config.js" defer></script>
+  <script src="supabase-config.js" defer></script>
 
   <!-- Main website JavaScript -->
   <script src="app.js" defer></script>
 
   <!-- Admin JavaScript -->
   <script src="admin.js" defer></script>
+
+  <script>
+  if (typeof initializeAmaniSupabase === "function") {
+    initializeAmaniSupabase();
+  }
+</script>
 </head>
 
 <body class="admin-shell">
