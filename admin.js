@@ -1981,7 +1981,7 @@
         "en-US",
         {
           style: "currency",
-          currency: "USD"
+          currency: "USD per dozen"
         }
       ).format(number);
 
