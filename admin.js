@@ -11,13 +11,10 @@
   const ADMIN = {
 
     sb: null,
-
     user: null,
 
     categories: [],
-
     products: [],
-
     orders: [],
 
 
@@ -29,7 +26,6 @@
 
       try {
 
-        // Wait for Supabase CDN/config
         if (!window.supabase) {
           throw new Error(
             "Supabase library has not loaded."
@@ -102,6 +98,7 @@
           }
         );
 
+
       } catch (error) {
 
         console.error(
@@ -167,9 +164,7 @@
       try {
 
         const isAdmin =
-          await this.checkAdmin(
-            user.id
-          );
+          await this.checkAdmin(user.id);
 
 
         if (!isAdmin) {
@@ -189,19 +184,27 @@
         this.user = user;
 
 
-        document.getElementById(
-          "loginView"
-        ).style.display = "none";
+        const loginView =
+          document.getElementById("loginView");
+
+        const adminView =
+          document.getElementById("adminView");
+
+        const logout =
+          document.getElementById("logout");
 
 
-        document.getElementById(
-          "adminView"
-        ).style.display = "block";
+        if (loginView) {
+          loginView.style.display = "none";
+        }
 
+        if (adminView) {
+          adminView.style.display = "block";
+        }
 
-        document.getElementById(
-          "logout"
-        ).style.display = "inline-flex";
+        if (logout) {
+          logout.style.display = "inline-flex";
+        }
 
 
         await this.refresh();
@@ -391,176 +394,175 @@
     // IMAGE UPLOAD
     // ========================================================
 
-    // ========================================================
-// IMAGE UPLOAD
-// ========================================================
+    async upload(file, bucket) {
 
-async upload(file, bucket = "product-images") {
+      if (!file) {
+        return "";
+      }
 
-  if (!file) {
-    return "";
-  }
 
-  if (!this.user) {
-    throw new Error(
-      "You must be logged in to upload an image."
-    );
-  }
+      if (!this.user) {
+        throw new Error(
+          "You must be logged in to upload an image."
+        );
+      }
 
-  if (!this.sb) {
-    throw new Error(
-      "Supabase is not connected."
-    );
-  }
 
-  if (!file.type || !file.type.startsWith("image/")) {
-    throw new Error(
-      "Please select a valid image file."
-    );
-  }
+      if (!this.sb) {
+        throw new Error(
+          "Supabase is not connected."
+        );
+      }
 
-  const maxSize = 10 * 1024 * 1024;
 
-  if (file.size > maxSize) {
-    throw new Error(
-      "Image is too large. Maximum size is 10MB."
-    );
-  }
+      // Only allow AMANI buckets
+      if (
+        bucket !== "category-images" &&
+        bucket !== "product-images"
+      ) {
+        throw new Error(
+          "Invalid image storage bucket: " +
+          bucket
+        );
+      }
 
-  // Only allow the two AMANI buckets
-  if (
-    bucket !== "category-images" &&
-    bucket !== "product-images"
-  ) {
-    throw new Error(
-      "Invalid image storage bucket."
-    );
-  }
 
-  const extension =
-    (
-      file.name
-        .split(".")
-        .pop() || "jpg"
-    )
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "") || "jpg";
+      // Validate file
+      if (
+        !file.type ||
+        !file.type.startsWith("image/")
+      ) {
+        throw new Error(
+          "Please select a valid image file."
+        );
+      }
 
-  const safeName =
-    file.name
-      .replace(
-        /[^a-zA-Z0-9._-]/g,
-        "-"
-      )
-      .replace(
-        /\.{2,}/g,
-        "."
+
+      // Maximum 10MB
+      const maxSize =
+        10 * 1024 * 1024;
+
+
+      if (file.size > maxSize) {
+        throw new Error(
+          "Image is too large. Maximum size is 10MB."
+        );
+      }
+
+
+      // Clean filename
+      const safeName =
+        file.name
+          .replace(
+            /[^a-zA-Z0-9._-]/g,
+            "-"
+          )
+          .replace(
+            /\.{2,}/g,
+            "."
+          );
+
+
+      // Unique ID
+      const uniqueId =
+        typeof crypto !== "undefined" &&
+        typeof crypto.randomUUID === "function"
+
+          ? crypto.randomUUID()
+
+          : Date.now().toString();
+
+
+      // Storage path
+      const path =
+        "admin/" +
+        this.user.id +
+        "/" +
+        Date.now() +
+        "-" +
+        uniqueId +
+        "-" +
+        safeName;
+
+
+      console.log(
+        "AMANI IMAGE UPLOAD",
+        {
+          bucket: bucket,
+          path: path,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size
+        }
       );
 
-  const uniqueId =
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : Date.now().toString();
 
-  const path =
-    "admin/" +
-    this.user.id +
-    "/" +
-    Date.now() +
-    "-" +
-    uniqueId +
-    "-" +
-    safeName;
+      // Upload directly
+      const {
+        error: uploadError
+      } = await this.sb
+        .storage
+        .from(bucket)
+        .upload(
+          path,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false,
+            contentType:
+              file.type || "image/jpeg"
+          }
+        );
 
-  console.log(
-    "Uploading image:",
-    {
-      bucket,
-      path,
-      type: file.type,
-      size: file.size
-    }
-  );
 
-  // Check that the bucket exists before uploading
-  const {
-    data: buckets,
-    error: bucketError
-  } = await this.sb
-    .storage
-    .listBuckets();
+      if (uploadError) {
 
-  if (bucketError) {
-    throw new Error(
-      "Could not check Supabase Storage: " +
-      bucketError.message
-    );
-  }
+        console.error(
+          "SUPABASE STORAGE UPLOAD ERROR:",
+          uploadError
+        );
 
-  const bucketExists =
-    (buckets || []).some(
-      item => item.name === bucket
-    );
 
-  if (!bucketExists) {
-    throw new Error(
-      `Storage bucket "${bucket}" was not found. ` +
-      `Please create it in Supabase Storage.`
-    );
-  }
+        throw new Error(
+          "Storage bucket '" +
+          bucket +
+          "': " +
+          uploadError.message
+        );
 
-  const {
-    error: uploadError
-  } = await this.sb
-    .storage
-    .from(bucket)
-    .upload(
-      path,
-      file,
-      {
-        cacheControl: "3600",
-        upsert: false,
-        contentType:
-          file.type || "image/jpeg"
       }
-    );
 
-  if (uploadError) {
-    console.error(
-      "SUPABASE STORAGE UPLOAD ERROR:",
-      uploadError
-    );
 
-    throw new Error(
-      uploadError.message ||
-      "Image upload failed."
-    );
-  }
+      // Get public URL
+      const {
+        data: publicData
+      } = this.sb
+        .storage
+        .from(bucket)
+        .getPublicUrl(path);
 
-  const {
-    data: publicData
-  } = this.sb
-    .storage
-    .from(bucket)
-    .getPublicUrl(path);
 
-  if (
-    !publicData ||
-    !publicData.publicUrl
-  ) {
-    throw new Error(
-      "Image uploaded, but Supabase did not return a public URL."
-    );
-  }
+      if (
+        !publicData ||
+        !publicData.publicUrl
+      ) {
 
-  console.log(
-    "Image uploaded successfully:",
-    publicData.publicUrl
-  );
+        throw new Error(
+          "Image uploaded, but Supabase did not return a public URL."
+        );
 
-  return publicData.publicUrl;
-},
+      }
+
+
+      console.log(
+        "AMANI IMAGE UPLOADED:",
+        publicData.publicUrl
+      );
+
+
+      return publicData.publicUrl;
+
+    },
 
 
     // ========================================================
@@ -840,17 +842,8 @@ async upload(file, bucket = "product-images") {
             let items = [];
 
 
-            try {
-
-              items =
-                Array.isArray(order.items)
-                  ? order.items
-                  : [];
-
-            } catch (e) {
-
-              items = [];
-
+            if (Array.isArray(order.items)) {
+              items = order.items;
             }
 
 
@@ -1048,7 +1041,7 @@ async upload(file, bucket = "product-images") {
         this.categories
           .map(
             category => `
-              <option value="${category.id}">
+              <option value="${this.escapeAttr(category.id)}">
                 ${this.escape(category.name)}
               </option>
             `
@@ -1195,17 +1188,18 @@ async upload(file, bucket = "product-images") {
           data.get("image");
 
 
+        // CATEGORY MUST USE category-images
         if (
           image &&
           image instanceof File &&
           image.size > 0
         ) {
 
-imageUrl =
-  await this.upload(
-    image,
-    "category-images"
-  );
+          imageUrl =
+            await this.upload(
+              image,
+              "category-images"
+            );
 
         }
 
@@ -1390,17 +1384,18 @@ imageUrl =
           data.get("image");
 
 
+        // PRODUCT MUST USE product-images
         if (
           image &&
           image instanceof File &&
           image.size > 0
         ) {
 
-  imageUrl =
-  await this.upload(
-    image,
-    "category-images"
-  );
+          imageUrl =
+            await this.upload(
+              image,
+              "product-images"
+            );
 
         }
 
@@ -1522,6 +1517,11 @@ imageUrl =
         );
 
 
+      if (!form) {
+        return;
+      }
+
+
       form.elements.id.value =
         category.id;
 
@@ -1572,6 +1572,11 @@ imageUrl =
         document.getElementById(
           "productForm"
         );
+
+
+      if (!form) {
+        return;
+      }
 
 
       form.elements.id.value =
@@ -1818,7 +1823,10 @@ imageUrl =
 
       form.reset();
 
-      form.elements.id.value = "";
+
+      if (form.elements.id) {
+        form.elements.id.value = "";
+      }
 
     },
 
@@ -1842,13 +1850,18 @@ imageUrl =
 
       form.reset();
 
-      form.elements.id.value = "";
 
-      form.elements.stock.value =
-        0;
+      if (form.elements.id) {
+        form.elements.id.value = "";
+      }
 
-      form.elements.featured.checked =
-        false;
+      if (form.elements.stock) {
+        form.elements.stock.value = 0;
+      }
+
+      if (form.elements.featured) {
+        form.elements.featured.checked = false;
+      }
 
     },
 
@@ -1955,7 +1968,7 @@ imageUrl =
 
 
     // ========================================================
-    // MONEY
+    // MONEY - USD
     // ========================================================
 
     money(value) {
@@ -2118,9 +2131,6 @@ imageUrl =
   document.addEventListener(
     "DOMContentLoaded",
     () => {
-
-      // Give defer-loaded scripts a moment
-      // to initialize the Supabase client.
 
       const start = () => {
 
