@@ -60,3 +60,670 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelector('#productForm').onsubmit=e=>ADMIN.saveProduct(e);
   document.querySelector('#logout').onclick=()=>ADMIN.sb.auth.signOut();
 });
+// ============================================================
+// AMANI FISHING WHOLESALE
+// VERCEL ADMIN API
+//
+// This file runs SERVER-SIDE.
+// NEVER put SUPABASE_SERVICE_ROLE_KEY in frontend JavaScript.
+// ============================================================
+
+const { createClient } = require("@supabase/supabase-js");
+const crypto = require("crypto");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+const COOKIE_NAME = "amani_admin_session";
+
+function json(res, status, data) {
+  res.status(status).json(data);
+}
+
+function safeEqual(a, b) {
+  const aBuffer = Buffer.from(String(a));
+  const bBuffer = Buffer.from(String(b));
+
+  if (aBuffer.length !== bBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(aBuffer, bBuffer);
+}
+
+function createSession() {
+  const payload = {
+    email: ADMIN_EMAIL,
+    exp: Date.now() + 1000 * 60 * 60 * 24
+  };
+
+  const encoded = Buffer
+    .from(JSON.stringify(payload))
+    .toString("base64url");
+
+  const signature = crypto
+    .createHmac("sha256", process.env.ADMIN_SESSION_SECRET)
+    .update(encoded)
+    .digest("base64url");
+
+  return `${encoded}.${signature}`;
+}
+
+function verifySession(req) {
+  const cookieHeader = req.headers.cookie || "";
+
+  const cookies = {};
+
+  cookieHeader.split(";").forEach(cookie => {
+    const index = cookie.indexOf("=");
+
+    if (index === -1) return;
+
+    const name = cookie.slice(0, index).trim();
+    const value = cookie.slice(index + 1).trim();
+
+    cookies[name] = decodeURIComponent(value);
+  });
+
+  const session = cookies[COOKIE_NAME];
+
+  if (!session) {
+    return false;
+  }
+
+  const parts = session.split(".");
+
+  if (parts.length !== 2) {
+    return false;
+  }
+
+  const encoded = parts[0];
+  const signature = parts[1];
+
+  const expected = crypto
+    .createHmac("sha256", process.env.ADMIN_SESSION_SECRET)
+    .update(encoded)
+    .digest("base64url");
+
+  if (!safeEqual(signature, expected)) {
+    return false;
+  }
+
+  try {
+    const payload = JSON.parse(
+      Buffer.from(encoded, "base64url").toString()
+    );
+
+    if (payload.exp < Date.now()) {
+      return false;
+    }
+
+    return payload.email === ADMIN_EMAIL;
+  } catch {
+    return false;
+  }
+}
+
+function requireAdmin(req, res) {
+  if (!verifySession(req)) {
+    json(res, 401, {
+      success: false,
+      message: "Administrator login required."
+    });
+
+    return false;
+  }
+
+  return true;
+}
+
+async function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+
+    req.on("data", chunk => {
+      body += chunk;
+    });
+
+    req.on("end", () => {
+      if (!body) {
+        resolve({});
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(body));
+      } catch {
+        reject(new Error("Invalid JSON."));
+      }
+    });
+
+    req.on("error", reject);
+  });
+}
+
+module.exports = async function handler(req, res) {
+
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate"
+  );
+
+  // ============================================================
+  // LOGIN
+  // ============================================================
+
+  if (req.method === "POST" && req.query.action === "login") {
+
+    try {
+
+      const body = await readBody(req);
+
+      const email = String(body.email || "").trim();
+      const password = String(body.password || "");
+
+      if (!email || !password) {
+        return json(res, 400, {
+          success: false,
+          message: "Email and password are required."
+        });
+      }
+
+      const emailCorrect = safeEqual(
+        email.toLowerCase(),
+        String(ADMIN_EMAIL).toLowerCase()
+      );
+
+      const passwordCorrect = safeEqual(
+        password,
+        ADMIN_PASSWORD
+      );
+
+      if (!emailCorrect || !passwordCorrect) {
+        return json(res, 401, {
+          success: false,
+          message: "Invalid administrator email or password."
+        });
+      }
+
+      const session = createSession();
+
+      res.setHeader(
+        "Set-Cookie",
+        `${COOKIE_NAME}=${encodeURIComponent(session)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`
+      );
+
+      return json(res, 200, {
+        success: true,
+        message: "Login successful."
+      });
+
+    } catch (error) {
+
+      console.error(error);
+
+      return json(res, 500, {
+        success: false,
+        message: "Login failed."
+      });
+    }
+  }
+
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "logout"
+  ) {
+
+    res.setHeader(
+      "Set-Cookie",
+      `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+    );
+
+    return json(res, 200, {
+      success: true
+    });
+  }
+
+  // ============================================================
+  // CHECK LOGIN
+  // ============================================================
+
+  if (
+    req.method === "GET" &&
+    req.query.action === "session"
+  ) {
+
+    return json(res, 200, {
+      loggedIn: verifySession(req)
+    });
+  }
+
+  // Everything below requires admin
+  if (!requireAdmin(req, res)) {
+    return;
+  }
+
+  // ============================================================
+  // GET ALL DATA
+  // ============================================================
+
+  if (
+    req.method === "GET" &&
+    req.query.action === "data"
+  ) {
+
+    const [
+      categoriesResult,
+      productsResult,
+      ordersResult
+    ] = await Promise.all([
+
+      supabase
+        .from("categories")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        }),
+
+      supabase
+        .from("products")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        }),
+
+      supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        })
+
+    ]);
+
+    if (categoriesResult.error) {
+      return json(res, 500, {
+        success: false,
+        message: categoriesResult.error.message
+      });
+    }
+
+    if (productsResult.error) {
+      return json(res, 500, {
+        success: false,
+        message: productsResult.error.message
+      });
+    }
+
+    if (ordersResult.error) {
+      return json(res, 500, {
+        success: false,
+        message: ordersResult.error.message
+      });
+    }
+
+    return json(res, 200, {
+      success: true,
+      categories: categoriesResult.data,
+      products: productsResult.data,
+      orders: ordersResult.data
+    });
+  }
+
+  // ============================================================
+  // ADD CATEGORY
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "add-category"
+  ) {
+
+    const body = await readBody(req);
+
+    const {
+      name,
+      slug,
+      description,
+      image_url
+    } = body;
+
+    if (!name || !slug) {
+      return json(res, 400, {
+        success: false,
+        message: "Category name and slug are required."
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("categories")
+      .insert({
+        name,
+        slug,
+        description: description || "",
+        image_url: image_url || ""
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return json(res, 400, {
+        success: false,
+        message: error.message
+      });
+    }
+
+    return json(res, 200, {
+      success: true,
+      category: data
+    });
+  }
+
+  // ============================================================
+  // UPDATE CATEGORY
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "update-category"
+  ) {
+
+    const body = await readBody(req);
+
+    if (!body.id) {
+      return json(res, 400, {
+        success: false,
+        message: "Category ID is required."
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("categories")
+      .update({
+        name: body.name,
+        slug: body.slug,
+        description: body.description || "",
+        image_url: body.image_url || ""
+      })
+      .eq("id", body.id)
+      .select()
+      .single();
+
+    if (error) {
+      return json(res, 400, {
+        success: false,
+        message: error.message
+      });
+    }
+
+    return json(res, 200, {
+      success: true,
+      category: data
+    });
+  }
+
+  // ============================================================
+  // DELETE CATEGORY
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "delete-category"
+  ) {
+
+    const body = await readBody(req);
+
+    const { error } = await supabase
+      .from("categories")
+      .delete()
+      .eq("id", body.id);
+
+    if (error) {
+      return json(res, 400, {
+        success: false,
+        message: error.message
+      });
+    }
+
+    return json(res, 200, {
+      success: true
+    });
+  }
+
+  // ============================================================
+  // ADD PRODUCT
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "add-product"
+  ) {
+
+    const body = await readBody(req);
+
+    if (!body.name) {
+      return json(res, 400, {
+        success: false,
+        message: "Product name is required."
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        name: body.name,
+        category_id: body.category_id || null,
+        price: Number(body.price || 0),
+        image_url: body.image_url || "",
+        sizes: body.sizes || "",
+        description: body.description || "",
+        stock: Number(body.stock || 0),
+        featured: Boolean(body.featured)
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return json(res, 400, {
+        success: false,
+        message: error.message
+      });
+    }
+
+    return json(res, 200, {
+      success: true,
+      product: data
+    });
+  }
+
+  // ============================================================
+  // UPDATE PRODUCT
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "update-product"
+  ) {
+
+    const body = await readBody(req);
+
+    if (!body.id) {
+      return json(res, 400, {
+        success: false,
+        message: "Product ID is required."
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("products")
+      .update({
+        name: body.name,
+        category_id: body.category_id || null,
+        price: Number(body.price || 0),
+        image_url: body.image_url || "",
+        sizes: body.sizes || "",
+        description: body.description || "",
+        stock: Number(body.stock || 0),
+        featured: Boolean(body.featured)
+      })
+      .eq("id", body.id)
+      .select()
+      .single();
+
+    if (error) {
+      return json(res, 400, {
+        success: false,
+        message: error.message
+      });
+    }
+
+    return json(res, 200, {
+      success: true,
+      product: data
+    });
+  }
+
+  // ============================================================
+  // DELETE PRODUCT
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "delete-product"
+  ) {
+
+    const body = await readBody(req);
+
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", body.id);
+
+    if (error) {
+      return json(res, 400, {
+        success: false,
+        message: error.message
+      });
+    }
+
+    return json(res, 200, {
+      success: true
+    });
+  }
+
+  // ============================================================
+  // UPDATE ORDER STATUS
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "update-order"
+  ) {
+
+    const body = await readBody(req);
+
+    const { data, error } = await supabase
+      .from("orders")
+      .update({
+        status: body.status
+      })
+      .eq("id", body.id)
+      .select()
+      .single();
+
+    if (error) {
+      return json(res, 400, {
+        success: false,
+        message: error.message
+      });
+    }
+
+    return json(res, 200, {
+      success: true,
+      order: data
+    });
+  }
+
+  // ============================================================
+  // UPLOAD IMAGE
+  // ============================================================
+
+  if (
+    req.method === "POST" &&
+    req.query.action === "upload-image"
+  ) {
+
+    const body = await readBody(req);
+
+    if (!body.filename || !body.base64) {
+      return json(res, 400, {
+        success: false,
+        message: "Image filename and image data are required."
+      });
+    }
+
+    const cleanBase64 = body.base64.replace(
+      /^data:[^;]+;base64,/,
+      ""
+    );
+
+    const buffer = Buffer.from(
+      cleanBase64,
+      "base64"
+    );
+
+    const extension =
+      String(body.filename)
+        .split(".")
+        .pop()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "") || "jpg";
+
+    const fileName =
+      `admin/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(
+        fileName,
+        buffer,
+        {
+          contentType:
+            body.contentType || "image/jpeg",
+          upsert: false
+        }
+      );
+
+    if (error) {
+      return json(res, 400, {
+        success: false,
+        message: error.message
+      });
+    }
+
+    const {
+      data: publicUrl
+    } = supabase.storage
+      .from("product-images")
+      .getPublicUrl(fileName);
+
+    return json(res, 200, {
+      success: true,
+      url: publicUrl.publicUrl
+    });
+  }
+
+  return json(res, 404, {
+    success: false,
+    message: "Unknown admin action."
+  });
+};
