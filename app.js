@@ -32,7 +32,7 @@ const AMANI = {
     el.innerHTML=`<footer class="footer"><div class="container footer-grid">
       <div><div class="logo" style="color:#fff">AMANI<span style="color:#d7a83e">FISHING WHOLESALE</span></div><p>Quality fishing flies for anglers, guides and wholesale buyers.</p></div>
       <div><h3>Shop</h3><p><a href="shop.html">All Flies</a></p><p><a href="shop.html">Categories</a></p><p><a href="checkout.html">Checkout</a></p></div>
-      <div><h3>Contact AMANI Fishing Wholesale</h3> <p><strong>Phone:</strong><a href="tel:+254700000000">+254 700 000 000</a></p><p><strong>WhatsApp:</strong><a href="https://wa.me/254700000000" target="_blank">Chat with us on WhatsApp</a></p><p><strong>Email:</strong><a href="mailto:info@amanifishingwholesale.com">info@amanifishingwholesale.com</a></p><p><a href="admin.html">Admin Login</a></p></div>
+      <div><h3>Contact AMANI Fishing Wholesale</h3> <p><strong>Phone:</strong><a href="tel:+254 799 028 055 ">+254 799 028 055 </a></p><p><strong>WhatsApp:</strong><a href="https://wa.me/254720070960" target="_blank">Chat with us on WhatsApp</a></p><p><strong>Email:</strong><a href="mailto:amianieric@gmail.com"> amianieric@gmail.com</a></p><p><a href="admin.html">Admin Login</a></p></div>
     </div><div class="container footer-bottom">© ${new Date().getFullYear()} AMANI Fishing Wholesale. All rights reserved.</div></footer>`;
   },
   cartMarkup(){
