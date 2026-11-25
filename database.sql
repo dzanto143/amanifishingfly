@@ -593,7 +593,7 @@ insert into public.admin_users (
 )
 
 values (
-  '343c72c7-8d80-4d18-909a-707a76553a20'
+  '13dfec8e-d191-485d-99d0-6f5e84f36c86'
 )
 
 on conflict (user_id)
