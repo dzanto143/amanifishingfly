@@ -2,6 +2,7 @@
 // AMANI FISHING WHOLESALE
 // ADMIN PANEL
 // DIRECT SUPABASE VERSION
+// PRICE = USD PER DOZEN
 // ============================================================
 
 (function () {
@@ -52,7 +53,6 @@
 
         this.sb = window.AMANI_SUPABASE;
 
-
         // Check current session
         const {
           data,
@@ -62,7 +62,6 @@
         if (error) {
           throw error;
         }
-
 
         if (data && data.session) {
 
@@ -75,7 +74,6 @@
           this.showLogin();
 
         }
-
 
         // Listen for login/logout
         this.sb.auth.onAuthStateChange(
@@ -97,7 +95,6 @@
 
           }
         );
-
 
       } catch (error) {
 
@@ -134,7 +131,6 @@
       const logout =
         document.getElementById("logout");
 
-
       if (loginView) {
         loginView.style.display = "block";
       }
@@ -166,7 +162,6 @@
         const isAdmin =
           await this.checkAdmin(user.id);
 
-
         if (!isAdmin) {
 
           await this.sb.auth.signOut();
@@ -180,9 +175,7 @@
           return;
         }
 
-
         this.user = user;
-
 
         const loginView =
           document.getElementById("loginView");
@@ -192,7 +185,6 @@
 
         const logout =
           document.getElementById("logout");
-
 
         if (loginView) {
           loginView.style.display = "none";
@@ -206,9 +198,7 @@
           logout.style.display = "inline-flex";
         }
 
-
         await this.refresh();
-
 
       } catch (error) {
 
@@ -243,11 +233,9 @@
         .eq("user_id", userId)
         .maybeSingle();
 
-
       if (error) {
         throw error;
       }
-
 
       return !!data;
 
@@ -269,23 +257,16 @@
         ] = await Promise.all([
 
           this.getCategories(),
-
           this.getProducts(),
-
           this.getOrders()
 
         ]);
 
-
         this.categories = categories;
-
         this.products = products;
-
         this.orders = orders;
 
-
         this.renderAll();
-
 
       } catch (error) {
 
@@ -320,11 +301,9 @@
           ascending: true
         });
 
-
       if (error) {
         throw error;
       }
-
 
       return data || [];
 
@@ -352,11 +331,9 @@
           ascending: false
         });
 
-
       if (error) {
         throw error;
       }
-
 
       return data || [];
 
@@ -379,11 +356,9 @@
           ascending: false
         });
 
-
       if (error) {
         throw error;
       }
-
 
       return data || [];
 
@@ -400,20 +375,17 @@
         return "";
       }
 
-
       if (!this.user) {
         throw new Error(
           "You must be logged in to upload an image."
         );
       }
 
-
       if (!this.sb) {
         throw new Error(
           "Supabase is not connected."
         );
       }
-
 
       // Only allow AMANI buckets
       if (
@@ -426,7 +398,6 @@
         );
       }
 
-
       // Validate file
       if (
         !file.type ||
@@ -437,18 +408,15 @@
         );
       }
 
-
       // Maximum 10MB
       const maxSize =
         10 * 1024 * 1024;
-
 
       if (file.size > maxSize) {
         throw new Error(
           "Image is too large. Maximum size is 10MB."
         );
       }
-
 
       // Clean filename
       const safeName =
@@ -462,16 +430,12 @@
             "."
           );
 
-
       // Unique ID
       const uniqueId =
         typeof crypto !== "undefined" &&
         typeof crypto.randomUUID === "function"
-
           ? crypto.randomUUID()
-
           : Date.now().toString();
-
 
       // Storage path
       const path =
@@ -484,7 +448,6 @@
         "-" +
         safeName;
 
-
       console.log(
         "AMANI IMAGE UPLOAD",
         {
@@ -495,7 +458,6 @@
           fileSize: file.size
         }
       );
-
 
       // Upload directly
       const {
@@ -514,14 +476,12 @@
           }
         );
 
-
       if (uploadError) {
 
         console.error(
           "SUPABASE STORAGE UPLOAD ERROR:",
           uploadError
         );
-
 
         throw new Error(
           "Storage bucket '" +
@@ -532,7 +492,6 @@
 
       }
 
-
       // Get public URL
       const {
         data: publicData
@@ -540,7 +499,6 @@
         .storage
         .from(bucket)
         .getPublicUrl(path);
-
 
       if (
         !publicData ||
@@ -553,12 +511,10 @@
 
       }
 
-
       console.log(
         "AMANI IMAGE UPLOADED:",
         publicData.publicUrl
       );
-
 
       return publicData.publicUrl;
 
@@ -572,13 +528,9 @@
     renderAll() {
 
       this.renderCategories();
-
       this.renderProducts();
-
       this.renderOrders();
-
       this.renderCategorySelect();
-
       this.renderStats();
 
     },
@@ -591,15 +543,11 @@
     renderCategories() {
 
       const list =
-        document.getElementById(
-          "catList"
-        );
-
+        document.getElementById("catList");
 
       if (!list) {
         return;
       }
-
 
       if (!this.categories.length) {
 
@@ -610,7 +558,6 @@
 
       }
 
-
       list.innerHTML =
         this.categories
           .map(category => {
@@ -620,7 +567,6 @@
               this.placeholder(
                 category.name
               );
-
 
             return `
               <div class="admin-row">
@@ -656,7 +602,7 @@
                   <button
                     type="button"
                     class="btn btn-light btn-sm"
-                    onclick="ADMIN.editCategory('${category.id}')"
+                    onclick="ADMIN.editCategory('${this.escapeAttr(category.id)}')"
                   >
                     Edit
                   </button>
@@ -664,7 +610,7 @@
                   <button
                     type="button"
                     class="btn btn-danger btn-sm"
-                    onclick="ADMIN.deleteCategory('${category.id}')"
+                    onclick="ADMIN.deleteCategory('${this.escapeAttr(category.id)}')"
                   >
                     Delete
                   </button>
@@ -687,15 +633,11 @@
     renderProducts() {
 
       const list =
-        document.getElementById(
-          "productList"
-        );
-
+        document.getElementById("productList");
 
       if (!list) {
         return;
       }
-
 
       if (!this.products.length) {
 
@@ -705,7 +647,6 @@
         return;
 
       }
-
 
       list.innerHTML =
         this.products
@@ -717,13 +658,11 @@
                 product.name
               );
 
-
             const category =
               product.categories &&
               product.categories.name
                 ? product.categories.name
                 : "No category";
-
 
             return `
               <div class="admin-row">
@@ -740,7 +679,7 @@
                     ${this.escape(product.name)}
                   </strong>
 
-                  <div>
+                  <div style="margin-top:5px;">
 
                     <strong>
                       ${this.money(product.price)}
@@ -784,7 +723,7 @@
                   <button
                     type="button"
                     class="btn btn-light btn-sm"
-                    onclick="ADMIN.editProduct('${product.id}')"
+                    onclick="ADMIN.editProduct('${this.escapeAttr(product.id)}')"
                   >
                     Edit
                   </button>
@@ -792,7 +731,7 @@
                   <button
                     type="button"
                     class="btn btn-danger btn-sm"
-                    onclick="ADMIN.deleteProduct('${product.id}')"
+                    onclick="ADMIN.deleteProduct('${this.escapeAttr(product.id)}')"
                   >
                     Delete
                   </button>
@@ -815,15 +754,11 @@
     renderOrders() {
 
       const list =
-        document.getElementById(
-          "orderList"
-        );
-
+        document.getElementById("orderList");
 
       if (!list) {
         return;
       }
-
 
       if (!this.orders.length) {
 
@@ -834,18 +769,15 @@
 
       }
 
-
       list.innerHTML =
         this.orders
           .map(order => {
 
             let items = [];
 
-
             if (Array.isArray(order.items)) {
               items = order.items;
             }
-
 
             const itemsHtml =
               items.length
@@ -854,22 +786,17 @@
                     .map(item => {
 
                       const qty =
-                        Number(
-                          item.qty || 0
-                        );
+                        Number(item.qty || 0);
 
                       const price =
-                        Number(
-                          item.price || 0
-                        );
-
+                        Number(item.price || 0);
 
                       return `
-                        <div>
+                        <div style="margin-bottom:6px;">
                           ${this.escape(
                             item.name || "Item"
                           )}
-                          × ${qty}
+                          × ${qty} dozen
                           —
                           ${this.money(
                             price * qty
@@ -881,7 +808,6 @@
                     .join("")
 
                 : "<div>No item details.</div>";
-
 
             return `
               <div
@@ -902,14 +828,15 @@
 
                     <strong>
                       ${this.escape(
-                        order.customer_name
+                        order.customer_name || ""
                       )}
                     </strong>
 
                     <div>
                       ${this.escape(
-                        order.phone
+                        order.phone || ""
                       )}
+
                       ${
                         order.email
                           ? " · " +
@@ -922,7 +849,7 @@
 
                     <div class="muted">
                       ${this.escape(
-                        order.address
+                        order.address || ""
                       )}
                     </div>
 
@@ -947,11 +874,10 @@
 
                   </div>
 
-
                   <select
                     class="field"
                     style="max-width:180px;"
-                    onchange="ADMIN.status('${order.id}', this.value)"
+                    onchange="ADMIN.status('${this.escapeAttr(order.id)}', this.value)"
                   >
 
                     ${
@@ -966,15 +892,14 @@
                         .map(
                           status => `
                             <option
-                              value="${status}"
+                              value="${this.escapeAttr(status)}"
                               ${
-                                order.status ===
-                                status
+                                order.status === status
                                   ? "selected"
                                   : ""
                               }
                             >
-                              ${status}
+                              ${this.escape(status)}
                             </option>
                           `
                         )
@@ -985,14 +910,11 @@
 
                 </div>
 
-
                 <hr>
-
 
                 <div>
                   ${itemsHtml}
                 </div>
-
 
                 <div
                   style="
@@ -1022,19 +944,14 @@
     renderCategorySelect() {
 
       const select =
-        document.getElementById(
-          "catSelect"
-        );
-
+        document.getElementById("catSelect");
 
       if (!select) {
         return;
       }
 
-
       const current =
         select.value;
-
 
       select.innerHTML =
         '<option value="">Select category</option>' +
@@ -1047,7 +964,6 @@
             `
           )
           .join("");
-
 
       if (
         current &&
@@ -1069,43 +985,31 @@
     renderStats() {
 
       const cats =
-        document.getElementById(
-          "statCats"
-        );
+        document.getElementById("statCats");
 
       const products =
-        document.getElementById(
-          "statProducts"
-        );
+        document.getElementById("statProducts");
 
       const orders =
-        document.getElementById(
-          "statOrders"
-        );
+        document.getElementById("statOrders");
 
       const sales =
-        document.getElementById(
-          "statSales"
-        );
-
+        document.getElementById("statSales");
 
       if (cats) {
         cats.textContent =
           this.categories.length;
       }
 
-
       if (products) {
         products.textContent =
           this.products.length;
       }
 
-
       if (orders) {
         orders.textContent =
           this.orders.length;
       }
-
 
       if (sales) {
 
@@ -1118,7 +1022,6 @@
               ),
             0
           );
-
 
         sales.textContent =
           this.money(total);
@@ -1136,40 +1039,31 @@
 
       event.preventDefault();
 
-
       const form =
         event.target;
-
 
       const button =
         form.querySelector(
           'button[type="submit"]'
         );
 
-
       try {
 
         button.disabled = true;
-
-        button.textContent =
-          "Saving...";
-
+        button.textContent = "Saving...";
 
         const data =
           new FormData(form);
-
 
         const id =
           String(
             data.get("id") || ""
           ).trim();
 
-
         const name =
           String(
             data.get("name") || ""
           ).trim();
-
 
         if (!name) {
           throw new Error(
@@ -1177,18 +1071,14 @@
           );
         }
 
-
         let imageUrl =
           String(
             data.get("image_url") || ""
           ).trim();
 
-
         const image =
           data.get("image");
 
-
-        // CATEGORY MUST USE category-images
         if (
           image &&
           image instanceof File &&
@@ -1203,7 +1093,6 @@
 
         }
 
-
         const payload = {
 
           name,
@@ -1213,8 +1102,7 @@
 
           description:
             String(
-              data.get("description") ||
-              ""
+              data.get("description") || ""
             ).trim(),
 
           image_url:
@@ -1222,9 +1110,7 @@
 
         };
 
-
         let result;
-
 
         if (id) {
 
@@ -1243,23 +1129,19 @@
 
         }
 
-
         if (result.error) {
           throw result.error;
         }
 
-
         this.clearCategoryForm();
 
         await this.refresh();
-
 
         alert(
           id
             ? "Category updated successfully."
             : "Category added successfully."
         );
-
 
       } catch (error) {
 
@@ -1276,9 +1158,7 @@
       } finally {
 
         button.disabled = false;
-
-        button.textContent =
-          "Save Category";
+        button.textContent = "Save Category";
 
       }
 
@@ -1293,40 +1173,31 @@
 
       event.preventDefault();
 
-
       const form =
         event.target;
-
 
       const button =
         form.querySelector(
           'button[type="submit"]'
         );
 
-
       try {
 
         button.disabled = true;
-
-        button.textContent =
-          "Saving...";
-
+        button.textContent = "Saving...";
 
         const data =
           new FormData(form);
-
 
         const id =
           String(
             data.get("id") || ""
           ).trim();
 
-
         const name =
           String(
             data.get("name") || ""
           ).trim();
-
 
         if (!name) {
           throw new Error(
@@ -1334,13 +1205,10 @@
           );
         }
 
-
         const categoryId =
           String(
-            data.get("category_id") ||
-            ""
+            data.get("category_id") || ""
           ).trim();
-
 
         if (!categoryId) {
           throw new Error(
@@ -1348,22 +1216,20 @@
           );
         }
 
-
+        // PRICE IS USD PER DOZEN
         const price =
           Number(
             data.get("price") || 0
           );
-
 
         if (
           !Number.isFinite(price) ||
           price < 0
         ) {
           throw new Error(
-            "Please enter a valid price."
+            "Please enter a valid price per dozen in USD."
           );
         }
-
 
         const stock =
           Math.max(
@@ -1373,18 +1239,14 @@
             )
           );
 
-
         let imageUrl =
           String(
             data.get("image_url") || ""
           ).trim();
 
-
         const image =
           data.get("image");
 
-
-        // PRODUCT MUST USE product-images
         if (
           image &&
           image instanceof File &&
@@ -1399,7 +1261,6 @@
 
         }
 
-
         const payload = {
 
           name,
@@ -1407,6 +1268,7 @@
           category_id:
             categoryId,
 
+          // Stored value = USD per dozen
           price,
 
           image_url:
@@ -1414,14 +1276,12 @@
 
           sizes:
             String(
-              data.get("sizes") ||
-              ""
+              data.get("sizes") || ""
             ).trim(),
 
           description:
             String(
-              data.get("description") ||
-              ""
+              data.get("description") || ""
             ).trim(),
 
           stock,
@@ -1431,9 +1291,7 @@
 
         };
 
-
         let result;
-
 
         if (id) {
 
@@ -1452,23 +1310,19 @@
 
         }
 
-
         if (result.error) {
           throw result.error;
         }
 
-
         this.clearProductForm();
 
         await this.refresh();
-
 
         alert(
           id
             ? "Product updated successfully."
             : "Product added successfully."
         );
-
 
       } catch (error) {
 
@@ -1485,9 +1339,7 @@
       } finally {
 
         button.disabled = false;
-
-        button.textContent =
-          "Save Product";
+        button.textContent = "Save Product";
 
       }
 
@@ -1505,22 +1357,18 @@
           item => item.id === id
         );
 
-
       if (!category) {
         return;
       }
-
 
       const form =
         document.getElementById(
           "categoryForm"
         );
 
-
       if (!form) {
         return;
       }
-
 
       form.elements.id.value =
         category.id;
@@ -1537,11 +1385,7 @@
       form.elements.image.value =
         "";
 
-
-      this.showTab(
-        "categories"
-      );
-
+      this.showTab("categories");
 
       form.scrollIntoView({
         behavior: "smooth",
@@ -1562,22 +1406,18 @@
           item => item.id === id
         );
 
-
       if (!product) {
         return;
       }
-
 
       const form =
         document.getElementById(
           "productForm"
         );
 
-
       if (!form) {
         return;
       }
-
 
       form.elements.id.value =
         product.id;
@@ -1588,6 +1428,7 @@
       form.elements.category_id.value =
         product.category_id || "";
 
+      // Price stored as USD per dozen
       form.elements.price.value =
         product.price ?? "";
 
@@ -1609,11 +1450,7 @@
       form.elements.image.value =
         "";
 
-
-      this.showTab(
-        "products"
-      );
-
+      this.showTab("products");
 
       form.scrollIntoView({
         behavior: "smooth",
@@ -1634,22 +1471,18 @@
           item => item.id === id
         );
 
-
       if (!category) {
         return;
       }
-
 
       const confirmed =
         confirm(
           `Delete category "${category.name}"?`
         );
 
-
       if (!confirmed) {
         return;
       }
-
 
       try {
 
@@ -1660,19 +1493,15 @@
           .delete()
           .eq("id", id);
 
-
         if (error) {
           throw error;
         }
 
-
         await this.refresh();
-
 
         alert(
           "Category deleted successfully."
         );
-
 
       } catch (error) {
 
@@ -1702,22 +1531,18 @@
           item => item.id === id
         );
 
-
       if (!product) {
         return;
       }
-
 
       const confirmed =
         confirm(
           `Delete product "${product.name}"?`
         );
 
-
       if (!confirmed) {
         return;
       }
-
 
       try {
 
@@ -1728,19 +1553,15 @@
           .delete()
           .eq("id", id);
 
-
         if (error) {
           throw error;
         }
 
-
         await this.refresh();
-
 
         alert(
           "Product deleted successfully."
         );
-
 
       } catch (error) {
 
@@ -1776,14 +1597,11 @@
           })
           .eq("id", id);
 
-
         if (error) {
           throw error;
         }
 
-
         await this.refresh();
-
 
       } catch (error) {
 
@@ -1815,14 +1633,11 @@
           "categoryForm"
         );
 
-
       if (!form) {
         return;
       }
 
-
       form.reset();
-
 
       if (form.elements.id) {
         form.elements.id.value = "";
@@ -1842,14 +1657,11 @@
           "productForm"
         );
 
-
       if (!form) {
         return;
       }
 
-
       form.reset();
-
 
       if (form.elements.id) {
         form.elements.id.value = "";
@@ -1873,30 +1685,21 @@
     showTab(id) {
 
       document
-        .querySelectorAll(
-          ".admin-tab"
-        )
+        .querySelectorAll(".admin-tab")
         .forEach(tab => {
 
-          tab.style.display =
-            "none";
+          tab.style.display = "none";
 
         });
 
-
       const selected =
-        document.getElementById(
-          id
-        );
-
+        document.getElementById(id);
 
       if (selected) {
 
-        selected.style.display =
-          "block";
+        selected.style.display = "block";
 
       }
-
 
       document
         .querySelectorAll(
@@ -1904,18 +1707,13 @@
         )
         .forEach(button => {
 
-          button.classList.remove(
-            "active"
-          );
-
+          button.classList.remove("active");
 
           if (
             button.dataset.tab === id
           ) {
 
-            button.classList.add(
-              "active"
-            );
+            button.classList.add("active");
 
           }
 
@@ -1932,7 +1730,9 @@
 
       try {
 
-        await this.sb.auth.signOut();
+        if (this.sb) {
+          await this.sb.auth.signOut();
+        }
 
       } catch (error) {
 
@@ -1961,14 +1761,13 @@
         )
         .replace(
           /^-+|-+$/g,
-          ""
-        );
+          "");
 
     },
 
 
     // ========================================================
-    // MONEY - USD
+    // MONEY - USD PER DOZEN
     // ========================================================
 
     money(value) {
@@ -1976,14 +1775,15 @@
       const number =
         Number(value || 0);
 
-
       return new Intl.NumberFormat(
         "en-US",
         {
           style: "currency",
-          currency: "USD per dozen"
+          currency: "USD",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
         }
-      ).format(number);
+      ).format(number) + " / dozen";
 
     },
 
@@ -2027,9 +1827,7 @@
 
     escapeAttr(value) {
 
-      return this.escape(
-        value
-      );
+      return this.escape(value);
 
     },
 
@@ -2045,7 +1843,6 @@
           name || "AMANI"
         )
           .slice(0, 25);
-
 
       const svg = `
         <svg
@@ -2070,12 +1867,11 @@
             font-size="40"
             fill="#777"
           >
-            ${text}
+            ${this.escape(text)}
           </text>
 
         </svg>
       `;
-
 
       return (
         "data:image/svg+xml;charset=UTF-8," +
@@ -2100,14 +1896,12 @@
           elementId
         );
 
-
       if (!element) {
         return;
       }
 
-
       element.innerHTML = `
-        <div class="notice ${type}">
+        <div class="notice ${this.escape(type)}">
           ${this.escape(text)}
         </div>
       `;
@@ -2133,11 +1927,8 @@
     () => {
 
       const start = () => {
-
         ADMIN.init();
-
       };
-
 
       if (
         window.AMANI_SUPABASE ||
@@ -2169,7 +1960,6 @@
           "loginForm"
         );
 
-
       if (loginForm) {
 
         loginForm.addEventListener(
@@ -2178,12 +1968,10 @@
 
             event.preventDefault();
 
-
             const button =
               document.getElementById(
                 "loginButton"
               );
-
 
             try {
 
@@ -2192,26 +1980,18 @@
               button.textContent =
                 "Logging in...";
 
-
               const data =
-                new FormData(
-                  loginForm
-                );
-
+                new FormData(loginForm);
 
               const email =
                 String(
-                  data.get("email") ||
-                  ""
+                  data.get("email") || ""
                 ).trim();
-
 
               const password =
                 String(
-                  data.get("password") ||
-                  ""
+                  data.get("password") || ""
                 );
-
 
               if (
                 !email ||
@@ -2224,7 +2004,6 @@
 
               }
 
-
               if (!ADMIN.sb) {
 
                 throw new Error(
@@ -2232,7 +2011,6 @@
                 );
 
               }
-
 
               const {
                 error
@@ -2243,14 +2021,11 @@
                     password
                   });
 
-
               if (error) {
                 throw error;
               }
 
-
               loginForm.reset();
-
 
             } catch (error) {
 
@@ -2258,7 +2033,6 @@
                 "LOGIN:",
                 error
               );
-
 
               ADMIN.message(
                 "loginMessage",
@@ -2268,8 +2042,7 @@
 
             } finally {
 
-              button.disabled =
-                false;
+              button.disabled = false;
 
               button.textContent =
                 "Login";
@@ -2291,7 +2064,6 @@
           "logout"
         );
 
-
       if (logout) {
 
         logout.addEventListener(
@@ -2311,15 +2083,12 @@
           "categoryForm"
         );
 
-
       if (categoryForm) {
 
         categoryForm.addEventListener(
           "submit",
           event =>
-            ADMIN.saveCategory(
-              event
-            )
+            ADMIN.saveCategory(event)
         );
 
       }
@@ -2334,15 +2103,12 @@
           "productForm"
         );
 
-
       if (productForm) {
 
         productForm.addEventListener(
           "submit",
           event =>
-            ADMIN.saveProduct(
-              event
-            )
+            ADMIN.saveProduct(event)
         );
 
       }
@@ -2357,7 +2123,6 @@
           "clearCategory"
         );
 
-
       if (clearCategory) {
 
         clearCategory.addEventListener(
@@ -2368,12 +2133,10 @@
 
       }
 
-
       const clearProduct =
         document.getElementById(
           "clearProduct"
         );
-
 
       if (clearProduct) {
 
