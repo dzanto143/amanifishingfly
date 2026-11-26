@@ -664,6 +664,12 @@
                 ? product.categories.name
                 : "No category";
 
+            const colors =
+              product.colors &&
+              String(product.colors).trim()
+                ? String(product.colors).trim()
+                : "Not specified";
+
             return `
               <div class="admin-row">
 
@@ -691,10 +697,29 @@
 
                     &nbsp; · &nbsp;
 
+                    Colors:
+                    ${this.escape(colors)}
+
+                    &nbsp; · &nbsp;
+
                     Stock:
                     ${Number(product.stock || 0)}
 
                   </div>
+
+                  ${
+                    product.sizes
+                      ? `
+                        <div
+                          class="muted"
+                          style="margin-top:5px;"
+                        >
+                          Sizes:
+                          ${this.escape(product.sizes)}
+                        </div>
+                      `
+                      : ""
+                  }
 
                   ${
                     product.featured
@@ -1279,6 +1304,12 @@
               data.get("sizes") || ""
             ).trim(),
 
+          // Available fly colors
+          colors:
+            String(
+              data.get("colors") || ""
+            ).trim(),
+
           description:
             String(
               data.get("description") || ""
@@ -1437,6 +1468,12 @@
 
       form.elements.sizes.value =
         product.sizes || "";
+
+      // Colors
+      if (form.elements.colors) {
+        form.elements.colors.value =
+          product.colors || "";
+      }
 
       form.elements.description.value =
         product.description || "";
@@ -1673,6 +1710,10 @@
 
       if (form.elements.featured) {
         form.elements.featured.checked = false;
+      }
+
+      if (form.elements.colors) {
+        form.elements.colors.value = "";
       }
 
     },
