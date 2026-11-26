@@ -6,9 +6,9 @@
    - USD pricing
    - Prices are per dozen
    - 1 dozen = 12 flies
-   - Supports product size variants
-   - Supports product color variants
-   - Saves size + color into order items
+   - Product size variants
+   - Product color variants
+   - Saves size + color inside every order item
    - Saves orders to Supabase
    - Clears cart after successful order
 ========================================================= */
@@ -45,7 +45,7 @@
 
 
     /* =====================================================
-       MONEY FORMAT
+       MONEY
     ===================================================== */
 
     function money(value) {
@@ -165,7 +165,7 @@
 
 
     /* =====================================================
-       GET SUPABASE CLIENT
+       SUPABASE CLIENT
     ===================================================== */
 
     function getSupabaseClient() {
@@ -193,6 +193,32 @@
 
 
     /* =====================================================
+       NORMALIZE VARIANT
+    ===================================================== */
+
+    function getSize(item) {
+
+        return String(
+            item?.size ??
+            item?.selectedSize ??
+            ""
+        ).trim();
+
+    }
+
+
+    function getColor(item) {
+
+        return String(
+            item?.color ??
+            item?.selectedColor ??
+            ""
+        ).trim();
+
+    }
+
+
+    /* =====================================================
        RENDER CHECKOUT
     ===================================================== */
 
@@ -210,18 +236,16 @@
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            EMPTY CART
-        ------------------------------------------------- */
+        ================================================= */
 
         if (!cart.length) {
 
             checkoutItems.innerHTML = `
 
                 <div class="notice">
-
                     Your cart is empty.
-
                 </div>
 
                 <div
@@ -269,16 +293,16 @@
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            TOTAL
-        ------------------------------------------------- */
+        ================================================= */
 
         let total = 0;
 
 
-        /* -------------------------------------------------
-           ITEMS
-        ------------------------------------------------- */
+        /* =================================================
+           RENDER ITEMS
+        ================================================= */
 
         checkoutItems.innerHTML =
             cart.map(
@@ -303,6 +327,13 @@
                     total += lineTotal;
 
 
+                    const size =
+                        getSize(item);
+
+                    const color =
+                        getColor(item);
+
+
                     /* -------------------------------------
                        IMAGE
                     ------------------------------------- */
@@ -324,6 +355,7 @@
                                         object-fit:cover;
                                         border-radius:12px;
                                         display:block;
+                                        flex-shrink:0;
                                     "
                                 >
 
@@ -360,25 +392,35 @@
 
 
                     /* -------------------------------------
-                       VARIANTS
+                       VARIANT INFORMATION
                     ------------------------------------- */
 
                     const variantParts = [];
 
 
-                    if (item.size) {
+                    if (size) {
 
                         variantParts.push(`
 
-                            <span>
+                            <span
+                                style="
+                                    display:inline-flex;
+                                    align-items:center;
+                                    gap:4px;
+                                    padding:5px 9px;
+                                    border-radius:999px;
+                                    background:#eef6f2;
+                                    color:#0c4a3c;
+                                    font-size:12px;
+                                    font-weight:600;
+                                "
+                            >
 
                                 <strong>
                                     Size:
                                 </strong>
 
-                                ${esc(
-                                    item.size
-                                )}
+                                ${esc(size)}
 
                             </span>
 
@@ -387,19 +429,29 @@
                     }
 
 
-                    if (item.color) {
+                    if (color) {
 
                         variantParts.push(`
 
-                            <span>
+                            <span
+                                style="
+                                    display:inline-flex;
+                                    align-items:center;
+                                    gap:4px;
+                                    padding:5px 9px;
+                                    border-radius:999px;
+                                    background:#f7f1df;
+                                    color:#76591b;
+                                    font-size:12px;
+                                    font-weight:600;
+                                "
+                            >
 
                                 <strong>
                                     Color:
                                 </strong>
 
-                                ${esc(
-                                    item.color
-                                )}
+                                ${esc(color)}
 
                             </span>
 
@@ -416,14 +468,8 @@
                                     style="
                                         display:flex;
                                         flex-wrap:wrap;
-                                        gap:6px 14px;
-                                        margin-top:7px;
-                                        font-size:13px;
-                                        color:
-                                            var(
-                                                --muted,
-                                                #6d7c77
-                                            );
+                                        gap:7px;
+                                        margin-top:8px;
                                     "
                                 >
 
@@ -434,6 +480,10 @@
                               `
                             : "";
 
+
+                    /* -------------------------------------
+                       ITEM
+                    ------------------------------------- */
 
                     return `
 
@@ -474,7 +524,11 @@
                                     "
                                 >
 
-                                    <div>
+                                    <div
+                                        style="
+                                            min-width:0;
+                                        "
+                                    >
 
                                         <h3
                                             style="
@@ -487,11 +541,13 @@
                                             )}
                                         </h3>
 
+
                                         ${variants}
+
 
                                         <div
                                             style="
-                                                margin-top:7px;
+                                                margin-top:8px;
                                                 font-size:14px;
                                                 color:
                                                     var(
@@ -501,9 +557,7 @@
                                             "
                                         >
 
-                                            ${money(
-                                                price
-                                            )}
+                                            ${money(price)}
                                             / dozen
 
                                             ×
@@ -539,17 +593,17 @@
             ).join("");
 
 
-        /* -------------------------------------------------
+        /* =================================================
            TOTAL DISPLAY
-        ------------------------------------------------- */
+        ================================================= */
 
         checkoutTotal.textContent =
             money(total);
 
 
-        /* -------------------------------------------------
-           ENABLE BUTTON
-        ------------------------------------------------- */
+        /* =================================================
+           ENABLE SUBMIT
+        ================================================= */
 
         if (checkoutForm) {
 
@@ -612,7 +666,7 @@
 
 
     /* =====================================================
-       VALIDATE CART ITEMS
+       VALIDATE CART
     ===================================================== */
 
     function validateCart(cart) {
@@ -647,6 +701,7 @@
                     item.price || 0
                 );
 
+
             if (
                 !Number.isFinite(price) ||
                 price < 0
@@ -665,6 +720,7 @@
                 Number(
                     item.qty || 0
                 );
+
 
             if (
                 !Number.isFinite(qty) ||
@@ -690,6 +746,90 @@
 
 
     /* =====================================================
+       BUILD ORDER ITEMS
+       
+       THIS IS THE IMPORTANT PART.
+
+       Every product in the order gets:
+       - product ID
+       - name
+       - price
+       - quantity
+       - image
+       - category
+       - size
+       - color
+    ===================================================== */
+
+    function buildOrderItems(cart) {
+
+        return cart.map(
+            (item) => {
+
+                const size =
+                    getSize(item);
+
+                const color =
+                    getColor(item);
+
+
+                return {
+
+                    id:
+                        item.id ||
+                        null,
+
+                    name:
+                        String(
+                            item.name ||
+                            ""
+                        ),
+
+                    price:
+                        Number(
+                            item.price ||
+                            0
+                        ),
+
+                    qty:
+                        Math.max(
+                            1,
+                            Number(
+                                item.qty ||
+                                1
+                            )
+                        ),
+
+                    image_url:
+                        String(
+                            item.image_url ||
+                            ""
+                        ),
+
+                    category_id:
+                        item.category_id ||
+                        item.categoryId ||
+                        null,
+
+                    /* =============================
+                       VARIANTS
+                    ============================== */
+
+                    size:
+                        size,
+
+                    color:
+                        color
+
+                };
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
        SUBMIT ORDER
     ===================================================== */
 
@@ -699,15 +839,13 @@
 
 
         if (!checkoutForm) {
-
             return;
-
         }
 
 
-        /* -------------------------------------------------
-           GET CART
-        ------------------------------------------------- */
+        /* =================================================
+           CART
+        ================================================= */
 
         const cart =
             getCart();
@@ -725,9 +863,9 @@
         }
 
 
-        /* -------------------------------------------------
-           VALIDATE CART
-        ------------------------------------------------- */
+        /* =================================================
+           VALIDATE
+        ================================================= */
 
         const cartValidation =
             validateCart(cart);
@@ -747,9 +885,9 @@
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            SUPABASE
-        ------------------------------------------------- */
+        ================================================= */
 
         const supabaseClient =
             getSupabaseClient();
@@ -771,9 +909,9 @@
         }
 
 
-        /* -------------------------------------------------
-           FORM DATA
-        ------------------------------------------------- */
+        /* =================================================
+           CUSTOMER FORM
+        ================================================= */
 
         const formData =
             new FormData(
@@ -821,9 +959,9 @@
             ).trim();
 
 
-        /* -------------------------------------------------
-           VALIDATION
-        ------------------------------------------------- */
+        /* =================================================
+           CUSTOMER VALIDATION
+        ================================================= */
 
         if (!customerName) {
 
@@ -861,9 +999,9 @@
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            TOTAL
-        ------------------------------------------------- */
+        ================================================= */
 
         const total =
             calculateTotal(
@@ -886,75 +1024,25 @@
         }
 
 
-        /* -------------------------------------------------
-           ORDER ITEMS
-        -------------------------------------------------
-
-           IMPORTANT:
-
-           Size and color are preserved here.
-
-        ------------------------------------------------- */
+        /* =================================================
+           BUILD ORDER ITEMS
+        ================================================= */
 
         const orderItems =
-            cart.map(
-                (item) => ({
-
-                    id:
-                        item.id ||
-                        null,
-
-                    name:
-                        String(
-                            item.name ||
-                            ""
-                        ),
-
-                    price:
-                        Number(
-                            item.price ||
-                            0
-                        ),
-
-                    qty:
-                        Math.max(
-                            1,
-                            Number(
-                                item.qty ||
-                                1
-                            )
-                        ),
-
-                    image_url:
-                        item.image_url ||
-                        "",
-
-                    category_id:
-                        item.category_id ||
-                        item.categoryId ||
-                        null,
-
-                    size:
-                        item.size
-                            ? String(
-                                item.size
-                            )
-                            : "",
-
-                    color:
-                        item.color
-                            ? String(
-                                item.color
-                            )
-                            : ""
-
-                })
+            buildOrderItems(
+                cart
             );
 
 
-        /* -------------------------------------------------
+        console.log(
+            "Order items being submitted:",
+            orderItems
+        );
+
+
+        /* =================================================
            SUBMIT BUTTON
-        ------------------------------------------------- */
+        ================================================= */
 
         const submitButton =
             checkoutForm.querySelector(
@@ -979,9 +1067,9 @@
         );
 
 
-        /* -------------------------------------------------
-           INSERT INTO SUPABASE
-        ------------------------------------------------- */
+        /* =================================================
+           INSERT ORDER
+        ================================================= */
 
         try {
 
@@ -1011,6 +1099,10 @@
                                 notes ||
                                 null,
 
+                            /* =========================
+                               PRODUCTS + VARIANTS
+                            ========================== */
+
                             items:
                                 orderItems,
 
@@ -1026,14 +1118,14 @@
                     .single();
 
 
-            /* ---------------------------------------------
-               DATABASE ERROR
-            --------------------------------------------- */
+            /* =================================================
+               ERROR
+            ================================================= */
 
             if (error) {
 
                 console.error(
-                    "Order insert error:",
+                    "Supabase order error:",
                     error
                 );
 
@@ -1042,98 +1134,123 @@
             }
 
 
+            /* =================================================
+               SUCCESS
+            ================================================= */
+
             console.log(
-                "Order created successfully:",
+                "Order successfully created:",
                 data
             );
 
 
-            /* ---------------------------------------------
+            console.log(
+                "Saved order items:",
+                data?.items
+            );
+
+
+            /* =================================================
                CLEAR CART
-            --------------------------------------------- */
+            ================================================= */
 
             clearCart();
 
 
-            /* ---------------------------------------------
-               SUCCESS DISPLAY
-            --------------------------------------------- */
+            /* =================================================
+               SUCCESS SCREEN
+            ================================================= */
 
-            checkoutItems.innerHTML = `
+            if (checkoutItems) {
 
-                <div
-                    class="notice"
-                    style="
-                        text-align:center;
-                        padding:30px 20px;
-                    "
-                >
+                checkoutItems.innerHTML = `
 
                     <div
+                        class="notice"
                         style="
-                            font-size:48px;
-                            margin-bottom:10px;
+                            text-align:center;
+                            padding:35px 20px;
                         "
                     >
-                        ✓
+
+                        <div
+                            style="
+                                width:64px;
+                                height:64px;
+                                margin:0 auto 15px;
+                                border-radius:50%;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                background:#e8f5ef;
+                                color:#0c4a3c;
+                                font-size:34px;
+                                font-weight:700;
+                            "
+                        >
+                            ✓
+                        </div>
+
+
+                        <h3
+                            style="
+                                margin:0 0 8px;
+                            "
+                        >
+                            Order Received
+                        </h3>
+
+
+                        <p
+                            class="muted"
+                            style="
+                                margin:0;
+                            "
+                        >
+                            Thank you for ordering from
+                            Amiani's Fly Wholesalers.
+                        </p>
+
+
+                        ${
+                            data &&
+                            data.id
+                                ? `
+
+                                    <p
+                                        style="
+                                            margin-top:12px;
+                                            font-size:13px;
+                                        "
+                                    >
+
+                                        Order Reference:
+
+                                        <strong>
+                                            ${esc(
+                                                data.id
+                                            )}
+                                        </strong>
+
+                                    </p>
+
+                                  `
+                                : ""
+                        }
+
                     </div>
 
+                `;
 
-                    <h3
-                        style="
-                            margin:0 0 8px;
-                        "
-                    >
-                        Order Received
-                    </h3>
+            }
 
 
-                    <p
-                        class="muted"
-                        style="
-                            margin:0;
-                        "
-                    >
+            if (checkoutTotal) {
 
-                        Thank you for ordering from
-                        Amiani's Fly Wholesalers.
+                checkoutTotal.textContent =
+                    money(total);
 
-                    </p>
-
-
-                    ${
-                        data &&
-                        data.id
-                            ? `
-
-                                <p
-                                    style="
-                                        margin-top:12px;
-                                        font-size:13px;
-                                    "
-                                >
-
-                                    Order reference:
-
-                                    <strong>
-                                        ${esc(
-                                            data.id
-                                        )}
-                                    </strong>
-
-                                </p>
-
-                              `
-                            : ""
-                    }
-
-                </div>
-
-            `;
-
-
-            checkoutTotal.textContent =
-                money(total);
+            }
 
 
             showMessage(
@@ -1158,9 +1275,9 @@
         }
 
 
-        /* -------------------------------------------------
-           ERROR
-        ------------------------------------------------- */
+        /* =================================================
+           ERROR HANDLING
+        ================================================= */
 
         catch (error) {
 
@@ -1171,7 +1288,7 @@
 
 
             showMessage(
-                error.message ||
+                error?.message ||
                 "We could not place your order. Please try again.",
                 "notice"
             );
@@ -1193,7 +1310,7 @@
 
 
     /* =====================================================
-       LISTEN FOR CART CHANGES
+       CART STORAGE CHANGES
     ===================================================== */
 
     window.addEventListener(
@@ -1222,7 +1339,7 @@
         if (!checkoutItems) {
 
             console.warn(
-                "Checkout items container was not found."
+                "Checkout: #checkoutItems was not found."
             );
 
             return;
