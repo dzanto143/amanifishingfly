@@ -84,7 +84,16 @@ create table if not exists public.products (
     image_url text
         default '',
 
+    -- AVAILABLE HOOK SIZES
+    -- Example: #10, #12, #14, #16
     sizes text
+        not null
+        default '',
+
+    -- AVAILABLE FLY COLORS
+    -- Example: Black, Olive, Brown, White
+    colors text
+        not null
         default '',
 
     description text

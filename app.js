@@ -2,6 +2,7 @@
 // AMIANI'S FLY WHOLESALERS
 // STOREFRONT APP
 // PRICING: USD PER DOZEN
+// SIZE + COLOR SELECTION
 // ============================================================
 
 const AMIANI = {
@@ -87,7 +88,9 @@ const AMIANI = {
   // PLACEHOLDER
   // ==========================================================
 
-  placeholder(text = "Amiani's Fly Wholesalers") {
+  placeholder(
+    text = "Amiani's Fly Wholesalers"
+  ) {
 
     return (
       "https://placehold.co/900x700/eef3f0/0c4a3c?text=" +
@@ -104,7 +107,9 @@ const AMIANI = {
   async categories() {
 
     if (!this.sb) {
-      throw new Error("Supabase is not configured.");
+      throw new Error(
+        "Supabase is not configured."
+      );
     }
 
     const {
@@ -129,7 +134,9 @@ const AMIANI = {
   async products() {
 
     if (!this.sb) {
-      throw new Error("Supabase is not configured.");
+      throw new Error(
+        "Supabase is not configured."
+      );
     }
 
     const {
@@ -154,11 +161,15 @@ const AMIANI = {
   async product(id) {
 
     if (!this.sb) {
-      throw new Error("Supabase is not configured.");
+      throw new Error(
+        "Supabase is not configured."
+      );
     }
 
     if (!id) {
-      throw new Error("Product ID is missing.");
+      throw new Error(
+        "Product ID is missing."
+      );
     }
 
     const {
@@ -182,11 +193,15 @@ const AMIANI = {
   async category(slug) {
 
     if (!this.sb) {
-      throw new Error("Supabase is not configured.");
+      throw new Error(
+        "Supabase is not configured."
+      );
     }
 
     if (!slug) {
-      throw new Error("Category slug is missing.");
+      throw new Error(
+        "Category slug is missing."
+      );
     }
 
     const {
@@ -208,6 +223,20 @@ const AMIANI = {
 
 
   // ==========================================================
+  // OPTION PARSER
+  // ==========================================================
+
+  parseOptions(value) {
+
+    return String(value || "")
+      .split(",")
+      .map(item => item.trim())
+      .filter(Boolean);
+
+  },
+
+
+  // ==========================================================
   // CART
   // ==========================================================
 
@@ -216,7 +245,9 @@ const AMIANI = {
     try {
 
       const stored =
-        localStorage.getItem("amani_cart");
+        localStorage.getItem(
+          "amani_cart"
+        );
 
       if (!stored) {
         return [];
@@ -260,13 +291,16 @@ const AMIANI = {
     const quantity =
       this.cart().reduce(
         (total, item) =>
-          total + Number(item.qty || 0),
+          total +
+          Number(item.qty || 0),
         0
       );
 
 
     document
-      .querySelectorAll("[data-cart-count]")
+      .querySelectorAll(
+        "[data-cart-count]"
+      )
       .forEach(element => {
 
         element.textContent =
@@ -286,10 +320,15 @@ const AMIANI = {
   // ADD TO CART
   // ==========================================================
 
-  addCart(product, quantity = 1) {
+  addCart(
+    product,
+    quantity = 1,
+    selectedSize = "",
+    selectedColor = ""
+  ) {
 
     if (!product || !product.id) {
-      return;
+      return false;
     }
 
 
@@ -301,19 +340,139 @@ const AMIANI = {
     );
 
 
-    // Stock is stored in dozens.
+    const size =
+      String(
+        selectedSize || ""
+      ).trim();
+
+
+    const color =
+      String(
+        selectedColor || ""
+      ).trim();
+
+
+    // ========================================================
+    // AVAILABLE OPTIONS
+    // ========================================================
+
+    const availableSizes =
+      this.parseOptions(
+        product.sizes
+      );
+
+
+    const availableColors =
+      this.parseOptions(
+        product.colors
+      );
+
+
+    // ========================================================
+    // REQUIRE SIZE
+    // ========================================================
+
+    if (
+      availableSizes.length &&
+      !size
+    ) {
+
+      alert(
+        "Please select a size before adding this fly to your cart."
+      );
+
+      return false;
+
+    }
+
+
+    // ========================================================
+    // REQUIRE COLOR
+    // ========================================================
+
+    if (
+      availableColors.length &&
+      !color
+    ) {
+
+      alert(
+        "Please select a color before adding this fly to your cart."
+      );
+
+      return false;
+
+    }
+
+
+    // ========================================================
+    // VALIDATE SELECTED SIZE
+    // ========================================================
+
+    if (
+      size &&
+      availableSizes.length &&
+      !availableSizes.includes(size)
+    ) {
+
+      alert(
+        "The selected size is not available for this product."
+      );
+
+      return false;
+
+    }
+
+
+    // ========================================================
+    // VALIDATE SELECTED COLOR
+    // ========================================================
+
+    if (
+      color &&
+      availableColors.length &&
+      !availableColors.includes(color)
+    ) {
+
+      alert(
+        "The selected color is not available for this product."
+      );
+
+      return false;
+
+    }
+
+
+    // ========================================================
+    // STOCK
+    // ========================================================
+
     const stock =
-      Number(product.stock || 0);
+      Number(
+        product.stock || 0
+      );
 
 
-    // If stock is defined and there is no stock.
     if (stock <= 0) {
 
       alert(
         "This product is currently out of stock."
       );
 
-      return;
+      return false;
+
+    }
+
+
+    if (
+      stock > 0 &&
+      quantity > stock
+    ) {
+
+      alert(
+        `Only ${stock} dozen(s) of ${product.name} are currently available.`
+      );
+
+      return false;
 
     }
 
@@ -322,12 +481,32 @@ const AMIANI = {
       this.cart();
 
 
+    // ========================================================
+    // FIND SAME PRODUCT + SAME SIZE + SAME COLOR
+    // ========================================================
+
     const existing =
-      cart.find(
-        item =>
-          item.id === product.id
+      cart.find(item =>
+
+        String(item.id) ===
+        String(product.id)
+
+        &&
+
+        String(item.size || "") ===
+        size
+
+        &&
+
+        String(item.color || "") ===
+        color
+
       );
 
+
+    // ========================================================
+    // EXISTING CART ITEM
+    // ========================================================
 
     if (existing) {
 
@@ -345,7 +524,7 @@ const AMIANI = {
           `Only ${stock} dozen(s) of ${product.name} are currently available.`
         );
 
-        return;
+        return false;
 
       }
 
@@ -353,21 +532,14 @@ const AMIANI = {
       existing.qty =
         newQuantity;
 
-    } else {
+    }
 
-      if (
-        stock > 0 &&
-        quantity > stock
-      ) {
 
-        alert(
-          `Only ${stock} dozen(s) of ${product.name} are currently available.`
-        );
+    // ========================================================
+    // NEW CART ITEM
+    // ========================================================
 
-        return;
-
-      }
-
+    else {
 
       cart.push({
 
@@ -383,7 +555,15 @@ const AMIANI = {
         image_url:
           product.image_url || "",
 
-        qty: quantity
+        category_id:
+          product.category_id || null,
+
+        qty: quantity,
+
+        // SELECTED OPTIONS
+        size: size,
+
+        color: color
 
       });
 
@@ -393,11 +573,38 @@ const AMIANI = {
     this.saveCart(cart);
 
 
-    alert(
+    // ========================================================
+    // SUCCESS MESSAGE
+    // ========================================================
+
+    let message =
       `${product.name} added to your cart.\n\n` +
       `Quantity: ${quantity} dozen\n` +
-      `Price: ${this.moneyPerDozen(product.price)}`
-    );
+      `Price: ${this.moneyPerDozen(
+        product.price
+      )}`;
+
+
+    if (size) {
+
+      message +=
+        `\nSize: ${size}`;
+
+    }
+
+
+    if (color) {
+
+      message +=
+        `\nColor: ${color}`;
+
+    }
+
+
+    alert(message);
+
+
+    return true;
 
   },
 
@@ -413,6 +620,32 @@ const AMIANI = {
         item =>
           item.id !== id
       );
+
+    this.saveCart(cart);
+
+  },
+
+
+  // ==========================================================
+  // REMOVE CART ITEM BY INDEX
+  // ==========================================================
+
+  removeCartItem(index) {
+
+    const cart =
+      this.cart();
+
+    if (
+      index < 0 ||
+      index >= cart.length
+    ) {
+      return;
+    }
+
+    cart.splice(
+      index,
+      1
+    );
 
     this.saveCart(cart);
 
@@ -838,7 +1071,7 @@ const AMIANI = {
               cart.length
 
                 ? cart
-                    .map(item => `
+                    .map((item, index) => `
 
                       <div class="cart-item">
 
@@ -865,7 +1098,64 @@ const AMIANI = {
                           </strong>
 
 
-                          <div class="muted">
+                          <!-- SIZE -->
+
+                          ${
+                            item.size
+                              ? `
+
+                                <div
+                                  class="muted"
+                                  style="margin-top:4px;"
+                                >
+
+                                  <strong>
+                                    Size:
+                                  </strong>
+
+                                  ${this.esc(
+                                    item.size
+                                  )}
+
+                                </div>
+
+                              `
+                              : ""
+                          }
+
+
+                          <!-- COLOR -->
+
+                          ${
+                            item.color
+                              ? `
+
+                                <div
+                                  class="muted"
+                                  style="margin-top:3px;"
+                                >
+
+                                  <strong>
+                                    Color:
+                                  </strong>
+
+                                  ${this.esc(
+                                    item.color
+                                  )}
+
+                                </div>
+
+                              `
+                              : ""
+                          }
+
+
+                          <!-- PRICE -->
+
+                          <div
+                            class="muted"
+                            style="margin-top:5px;"
+                          >
 
                             ${this.moneyPerDozen(
                               item.price
@@ -882,11 +1172,11 @@ const AMIANI = {
                           </div>
 
 
+                          <!-- REMOVE -->
+
                           <button
                             class="btn btn-danger btn-sm remove-cart"
-                            data-id="${this.escAttr(
-                              item.id
-                            )}"
+                            data-index="${index}"
                             type="button"
                           >
                             Remove
@@ -1084,8 +1374,14 @@ const AMIANI = {
 
         button.onclick = () => {
 
-          this.removeCart(
-            button.dataset.id
+          const index =
+            Number(
+              button.dataset.index
+            );
+
+
+          this.removeCartItem(
+            index
           );
 
 
@@ -1381,10 +1677,6 @@ async function loadHomeProducts() {
       await AMIANI.products();
 
 
-    // Show latest products.
-    // The previous ".filter(p => p.featured || true)"
-    // always returned every product, so it was unnecessary.
-
     const list =
       products.slice(
         0,
@@ -1538,7 +1830,7 @@ function productCard(product) {
             ${
               isOutOfStock
                 ? "Out of Stock"
-                : "Add 1 Dozen"
+                : "Select Options"
             }
 
           </button>
@@ -1573,6 +1865,50 @@ function productCard(product) {
 
         </small>
 
+
+        ${
+          AMIANI.parseOptions(
+            product.sizes
+          ).length
+            ? `
+              <small
+                class="muted"
+                style="
+                  display:block;
+                  margin-top:4px;
+                "
+              >
+                Sizes:
+                ${AMIANI.esc(
+                  product.sizes
+                )}
+              </small>
+            `
+            : ""
+        }
+
+
+        ${
+          AMIANI.parseOptions(
+            product.colors
+          ).length
+            ? `
+              <small
+                class="muted"
+                style="
+                  display:block;
+                  margin-top:4px;
+                "
+              >
+                Colors:
+                ${AMIANI.esc(
+                  product.colors
+                )}
+              </small>
+            `
+            : ""
+        }
+
       </div>
 
     </article>
@@ -1584,6 +1920,11 @@ function productCard(product) {
 
 // ============================================================
 // ATTACH ADD BUTTONS
+// ============================================================
+//
+// Product cards now take the customer to the product page.
+// This prevents the customer from accidentally adding a product
+// without selecting its size and color.
 // ============================================================
 
 function attachAddButtons(
@@ -1614,14 +1955,39 @@ function attachAddButtons(
           );
 
 
-        if (product) {
+        if (!product) {
+          return;
+        }
 
-          AMIANI.addCart(
-            product,
-            1
+
+        if (
+          Number(product.stock || 0) <= 0
+        ) {
+
+          alert(
+            "This product is currently out of stock."
           );
 
+          return;
+
         }
+
+
+        /*
+         * Always open the product page.
+         *
+         * The customer must select:
+         * - Size
+         * - Color
+         * - Quantity
+         *
+         * before adding the item.
+         */
+
+        window.location.href =
+          `product.html?id=${encodeURIComponent(
+            product.id
+          )}`;
 
       };
 
@@ -1885,6 +2251,22 @@ async function loadProductPage() {
       stock <= 0;
 
 
+    // ========================================================
+    // OPTIONS
+    // ========================================================
+
+    const sizes =
+      AMIANI.parseOptions(
+        product.sizes
+      );
+
+
+    const colors =
+      AMIANI.parseOptions(
+        product.colors
+      );
+
+
     box.innerHTML = `
 
       <div
@@ -1961,21 +2343,162 @@ async function loadProductPage() {
         </p>
 
 
-        <p>
+        <!-- ==================================================
+             AVAILABLE SIZES
+        =================================================== -->
 
-          <strong>
-            Sizes:
-          </strong>
+        ${
+          sizes.length
+            ? `
 
-          ${AMIANI.esc(
-            product.sizes ||
-            "Contact us for available sizes"
-          )}
+              <div
+                class="form-group"
+                style="margin-top:20px;"
+              >
 
-        </p>
+                <label
+                  for="productSize"
+                  style="
+                    display:block;
+                    margin-bottom:7px;
+                    font-weight:800;
+                  "
+                >
+
+                  Select Size
+
+                  <span
+                    style="color:#b42318;"
+                  >
+                    *
+                  </span>
+
+                </label>
 
 
-        <p>
+                <select
+                  id="productSize"
+                  class="field"
+                  ${outOfStock ? "disabled" : ""}
+                >
+
+                  <option value="">
+                    Choose a size
+                  </option>
+
+
+                  ${
+                    sizes
+                      .map(size => `
+
+                        <option
+                          value="${AMIANI.escAttr(
+                            size
+                          )}"
+                        >
+
+                          ${AMIANI.esc(
+                            size
+                          )}
+
+                        </option>
+
+                      `)
+                      .join("")
+                  }
+
+                </select>
+
+              </div>
+
+            `
+            : ""
+        }
+
+
+        <!-- ==================================================
+             AVAILABLE COLORS
+        =================================================== -->
+
+        ${
+          colors.length
+            ? `
+
+              <div
+                class="form-group"
+                style="margin-top:15px;"
+              >
+
+                <label
+                  for="productColor"
+                  style="
+                    display:block;
+                    margin-bottom:7px;
+                    font-weight:800;
+                  "
+                >
+
+                  Select Color
+
+                  <span
+                    style="color:#b42318;"
+                  >
+                    *
+                  </span>
+
+                </label>
+
+
+                <select
+                  id="productColor"
+                  class="field"
+                  ${outOfStock ? "disabled" : ""}
+                >
+
+                  <option value="">
+                    Choose a color
+                  </option>
+
+
+                  ${
+                    colors
+                      .map(color => `
+
+                        <option
+                          value="${AMIANI.escAttr(
+                            color
+                          )}"
+                        >
+
+                          ${AMIANI.esc(
+                            color
+                          )}
+
+                        </option>
+
+                      `)
+                      .join("")
+                  }
+
+                </select>
+
+              </div>
+
+            `
+            : ""
+        }
+
+
+        <!-- ==================================================
+             STOCK
+        =================================================== -->
+
+        <p
+          style="
+            margin-top:15px;
+            font-weight:700;
+          "
+        >
 
           <strong>
             Stock:
@@ -2002,7 +2525,14 @@ async function loadProductPage() {
         }
 
 
-        <div class="qty">
+        <!-- ==================================================
+             QUANTITY
+        =================================================== -->
+
+        <div
+          class="qty"
+          style="margin-top:18px;"
+        >
 
           <label
             for="qty"
@@ -2013,7 +2543,9 @@ async function loadProductPage() {
               margin-bottom:6px;
             "
           >
+
             Quantity (dozens)
+
           </label>
 
 
@@ -2048,11 +2580,32 @@ async function loadProductPage() {
         </div>
 
 
+        <!-- ==================================================
+             OPTION MESSAGE
+        =================================================== -->
+
+        <div
+          id="productOptionMessage"
+          style="
+            margin-top:12px;
+            margin-bottom:12px;
+          "
+        ></div>
+
+
+        <!-- ==================================================
+             ADD TO CART
+        =================================================== -->
+
         <button
           class="btn btn-primary"
           id="addDetail"
           type="button"
           ${outOfStock ? "disabled" : ""}
+          style="
+            width:100%;
+            margin-top:10px;
+          "
         >
 
           ${
@@ -2063,10 +2616,15 @@ async function loadProductPage() {
 
         </button>
 
+
       </div>
 
     `;
 
+
+    // ========================================================
+    // ELEMENTS
+    // ========================================================
 
     const quantityInput =
       document.querySelector(
@@ -2089,6 +2647,24 @@ async function loadProductPage() {
     const plusButton =
       document.querySelector(
         "#plus"
+      );
+
+
+    const sizeSelect =
+      document.querySelector(
+        "#productSize"
+      );
+
+
+    const colorSelect =
+      document.querySelector(
+        "#productColor"
+      );
+
+
+    const optionMessage =
+      document.querySelector(
+        "#productOptionMessage"
       );
 
 
@@ -2253,6 +2829,46 @@ async function loadProductPage() {
 
 
     // ========================================================
+    // SIZE CHANGE
+    // ========================================================
+
+    if (sizeSelect) {
+
+      sizeSelect.onchange = () => {
+
+        if (optionMessage) {
+
+          optionMessage.innerHTML =
+            "";
+
+        }
+
+      };
+
+    }
+
+
+    // ========================================================
+    // COLOR CHANGE
+    // ========================================================
+
+    if (colorSelect) {
+
+      colorSelect.onchange = () => {
+
+        if (optionMessage) {
+
+          optionMessage.innerHTML =
+            "";
+
+        }
+
+      };
+
+    }
+
+
+    // ========================================================
     // ADD PRODUCT
     // ========================================================
 
@@ -2280,10 +2896,144 @@ async function loadProductPage() {
       }
 
 
-      AMIANI.addCart(
-        product,
-        quantity
-      );
+      const selectedSize =
+        sizeSelect
+          ? sizeSelect.value.trim()
+          : "";
+
+
+      const selectedColor =
+        colorSelect
+          ? colorSelect.value.trim()
+          : "";
+
+
+      // ======================================================
+      // VALIDATE SIZE
+      // ======================================================
+
+      if (
+        sizes.length &&
+        !selectedSize
+      ) {
+
+        if (optionMessage) {
+
+          optionMessage.innerHTML = `
+
+            <div
+              class="notice error"
+            >
+
+              Please select a size
+              before adding this fly
+              to your cart.
+
+            </div>
+
+          `;
+
+        }
+
+
+        if (sizeSelect) {
+
+          sizeSelect.focus();
+
+        }
+
+
+        return;
+
+      }
+
+
+      // ======================================================
+      // VALIDATE COLOR
+      // ======================================================
+
+      if (
+        colors.length &&
+        !selectedColor
+      ) {
+
+        if (optionMessage) {
+
+          optionMessage.innerHTML = `
+
+            <div
+              class="notice error"
+            >
+
+              Please select a color
+              before adding this fly
+              to your cart.
+
+            </div>
+
+          `;
+
+        }
+
+
+        if (colorSelect) {
+
+          colorSelect.focus();
+
+        }
+
+
+        return;
+
+      }
+
+
+      // ======================================================
+      // ADD
+      // ======================================================
+
+      const added =
+        AMIANI.addCart(
+          product,
+          quantity,
+          selectedSize,
+          selectedColor
+        );
+
+
+      if (added && optionMessage) {
+
+        optionMessage.innerHTML = `
+
+          <div
+            class="notice"
+          >
+
+            <strong>
+              Added to cart.
+            </strong>
+
+            ${
+              selectedSize
+                ? `Size: ${AMIANI.esc(
+                    selectedSize
+                  )}.`
+                : ""
+            }
+
+            ${
+              selectedColor
+                ? `Color: ${AMIANI.esc(
+                    selectedColor
+                  )}.`
+                : ""
+            }
+
+          </div>
+
+        `;
+
+      }
 
     };
 
