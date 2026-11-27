@@ -13,7 +13,12 @@
 //
 // CART:
 //   Same product with different size/color = separate line
+//
+// RELATED PRODUCTS:
+//   Products from the same category are automatically shown
+//   underneath the current product.
 // ============================================================
+
 
 const AMIANI = {
 
@@ -120,24 +125,34 @@ const AMIANI = {
   async categories() {
 
     if (!this.sb) {
+
       throw new Error(
         "Supabase is not configured."
       );
+
     }
+
 
     const {
       data,
       error
     } = await this.sb
+
       .from("categories")
+
       .select("*")
+
       .order("name", {
         ascending: true
       });
 
+
     if (error) {
+
       throw error;
+
     }
+
 
     return data || [];
 
@@ -151,24 +166,34 @@ const AMIANI = {
   async products() {
 
     if (!this.sb) {
+
       throw new Error(
         "Supabase is not configured."
       );
+
     }
+
 
     const {
       data,
       error
     } = await this.sb
+
       .from("products")
+
       .select("*,categories(id,name,slug)")
+
       .order("created_at", {
         ascending: false
       });
 
+
     if (error) {
+
       throw error;
+
     }
+
 
     return data || [];
 
@@ -182,29 +207,43 @@ const AMIANI = {
   async product(id) {
 
     if (!this.sb) {
+
       throw new Error(
         "Supabase is not configured."
       );
+
     }
 
+
     if (!id) {
+
       throw new Error(
         "Product ID is missing."
       );
+
     }
+
 
     const {
       data,
       error
     } = await this.sb
+
       .from("products")
+
       .select("*,categories(id,name,slug)")
+
       .eq("id", id)
+
       .single();
 
+
     if (error) {
+
       throw error;
+
     }
+
 
     return data;
 
@@ -218,29 +257,43 @@ const AMIANI = {
   async category(slug) {
 
     if (!this.sb) {
+
       throw new Error(
         "Supabase is not configured."
       );
+
     }
 
+
     if (!slug) {
+
       throw new Error(
         "Category slug is missing."
       );
+
     }
+
 
     const {
       data,
       error
     } = await this.sb
+
       .from("categories")
+
       .select("*")
+
       .eq("slug", slug)
+
       .single();
 
+
     if (error) {
+
       throw error;
+
     }
+
 
     return data;
 
@@ -251,6 +304,7 @@ const AMIANI = {
   // PARSE SIZES / COLORS
   //
   // Supports:
+  //
   // #10, #12, #14
   //
   // Also supports newline-separated values.
@@ -280,18 +334,27 @@ const AMIANI = {
           "amani_cart"
         );
 
+
       if (!stored) {
+
         return [];
+
       }
+
 
       const parsed =
         JSON.parse(stored);
 
+
       if (!Array.isArray(parsed)) {
+
         return [];
+
       }
 
+
       return parsed.map(item => ({
+
         ...item,
 
         qty: Math.max(
@@ -317,12 +380,14 @@ const AMIANI = {
 
       }));
 
+
     } catch (error) {
 
       console.error(
         "Could not read cart:",
         error
       );
+
 
       return [];
 
@@ -342,6 +407,7 @@ const AMIANI = {
       JSON.stringify(cart)
     );
 
+
     this.updateCartCount();
 
   },
@@ -349,8 +415,6 @@ const AMIANI = {
 
   // ==========================================================
   // CART COUNT
-  //
-  // Quantity = number of dozens
   // ==========================================================
 
   updateCartCount() {
@@ -373,6 +437,7 @@ const AMIANI = {
         element.textContent =
           quantity;
 
+
         element.setAttribute(
           "aria-label",
           `${quantity} dozen in cart`
@@ -385,14 +450,6 @@ const AMIANI = {
 
   // ==========================================================
   // CREATE UNIQUE CART LINE
-  //
-  // Same product:
-  //
-  // Adams / #12 / Olive
-  //
-  // is different from:
-  //
-  // Adams / #14 / Brown
   // ==========================================================
 
   cartLineKey(
@@ -402,13 +459,17 @@ const AMIANI = {
   ) {
 
     return [
+
       String(productId || ""),
+
       String(size || "")
         .trim()
         .toLowerCase(),
+
       String(color || "")
         .trim()
         .toLowerCase()
+
     ].join("|");
 
   },
@@ -581,18 +642,17 @@ const AMIANI = {
 
     // ========================================================
     // TOTAL PRODUCT QUANTITY ALREADY IN CART
-    //
-    // Stock belongs to the product, not the individual
-    // variant, so different variants share the same stock.
     // ========================================================
 
     const existingProductQuantity =
       cart
+
         .filter(
           item =>
             String(item.id) ===
             String(product.id)
         )
+
         .reduce(
           (
             total,
@@ -623,6 +683,7 @@ const AMIANI = {
           ? `Only ${remaining} dozen(s) of ${product.name} remain available for your cart.`
           : `You already have all available stock of ${product.name} in your cart.`
       );
+
 
       return false;
 
@@ -750,8 +811,6 @@ const AMIANI = {
 
   // ==========================================================
   // REMOVE CART ITEM BY PRODUCT ID
-  //
-  // Kept for compatibility.
   // ==========================================================
 
   removeCart(id) {
@@ -763,6 +822,7 @@ const AMIANI = {
           String(id)
       );
 
+
     this.saveCart(
       cart
     );
@@ -771,7 +831,7 @@ const AMIANI = {
 
 
   // ==========================================================
-  // REMOVE EXACT CART LINE BY INDEX
+  // REMOVE EXACT CART LINE
   // ==========================================================
 
   removeCartItem(index) {
@@ -840,7 +900,9 @@ const AMIANI = {
 
 
     if (!element) {
+
       return;
+
     }
 
 
@@ -951,22 +1013,23 @@ const AMIANI = {
       navigation
     ) {
 
-      menuButton.onclick = () => {
+      menuButton.onclick =
+        () => {
 
-        const isOpen =
-          navigation.classList.toggle(
-            "open"
+          const isOpen =
+            navigation.classList.toggle(
+              "open"
+            );
+
+
+          menuButton.setAttribute(
+            "aria-expanded",
+            isOpen
+              ? "true"
+              : "false"
           );
 
-
-        menuButton.setAttribute(
-          "aria-expanded",
-          isOpen
-            ? "true"
-            : "false"
-        );
-
-      };
+        };
 
     }
 
@@ -1007,7 +1070,9 @@ const AMIANI = {
 
 
     if (!element) {
+
       return;
+
     }
 
 
@@ -1229,6 +1294,7 @@ const AMIANI = {
               cart.length
 
                 ? cart
+
                     .map(
                       (
                         item,
@@ -1482,7 +1548,9 @@ const AMIANI = {
 
 
     if (!drawer) {
+
       return;
+
     }
 
 
@@ -1490,10 +1558,6 @@ const AMIANI = {
       "open"
     );
 
-
-    // ========================================================
-    // CLOSE
-    // ========================================================
 
     const closeButton =
       drawer.querySelector(
@@ -1515,10 +1579,6 @@ const AMIANI = {
     }
 
 
-    // ========================================================
-    // OVERLAY
-    // ========================================================
-
     const overlay =
       drawer.querySelector(
         "#cartOverlay"
@@ -1538,10 +1598,6 @@ const AMIANI = {
 
     }
 
-
-    // ========================================================
-    // REMOVE
-    // ========================================================
 
     drawer
       .querySelectorAll(
@@ -1734,7 +1790,9 @@ async function loadHome() {
 
 
   if (!element) {
+
     return;
+
   }
 
 
@@ -1855,7 +1913,9 @@ async function loadHomeProducts() {
 
 
   if (!element) {
+
     return;
+
   }
 
 
@@ -1926,12 +1986,6 @@ async function loadHomeProducts() {
 
 // ============================================================
 // PRODUCT CARD
-// ============================================================
-//
-// Product cards show available sizes/colors.
-//
-// Customer is taken to product.html where the exact
-// variant can be selected before adding to cart.
 // ============================================================
 
 function productCard(
@@ -2151,7 +2205,9 @@ function attachAddButtons(
 ) {
 
   if (!container) {
+
     return;
+
   }
 
 
@@ -2178,7 +2234,9 @@ function attachAddButtons(
 
 
             if (!product) {
+
               return;
+
             }
 
 
@@ -2223,7 +2281,9 @@ async function loadShop() {
 
 
   if (!grid) {
+
     return;
+
   }
 
 
@@ -2412,6 +2472,256 @@ async function loadShop() {
 
 
 // ============================================================
+// RELATED PRODUCTS
+//
+// IMPORTANT:
+//
+// This function finds ALL products that have the same
+// category_id as the product currently being viewed.
+//
+// Example:
+//
+// Current product:
+// Adams Dry
+//
+// Category:
+// Adams
+//
+// Results:
+//
+// Parachute Adams
+// CDC Adams
+// Adams Irresistible
+// Adams Variant
+// etc.
+//
+// The current product is excluded.
+// ============================================================
+
+async function loadRelatedProducts(
+  currentProduct
+) {
+
+  const section =
+    document.querySelector(
+      "#relatedProducts"
+    );
+
+
+  const grid =
+    document.querySelector(
+      "#relatedProductsGrid"
+    );
+
+
+  const title =
+    document.querySelector(
+      "#relatedProductsTitle"
+    );
+
+
+  const description =
+    document.querySelector(
+      "#relatedProductsDescription"
+    );
+
+
+  // ==========================================================
+  // SECTION DOES NOT EXIST
+  // ==========================================================
+
+  if (
+    !section ||
+    !grid ||
+    !currentProduct
+  ) {
+
+    return;
+
+  }
+
+
+  try {
+
+    // ========================================================
+    // GET CATEGORY ID
+    //
+    // Primary:
+    // currentProduct.category_id
+    //
+    // Fallback:
+    // currentProduct.categories.id
+    // ========================================================
+
+    const categoryId =
+      currentProduct.category_id ||
+      currentProduct.categories?.id ||
+      "";
+
+
+    // ========================================================
+    // NO CATEGORY
+    // ========================================================
+
+    if (!categoryId) {
+
+      section.style.display =
+        "none";
+
+      return;
+
+    }
+
+
+    // ========================================================
+    // LOAD ALL PRODUCTS
+    // ========================================================
+
+    const allProducts =
+      await AMIANI.products();
+
+
+    // ========================================================
+    // FIND ALL PRODUCTS FROM SAME CATEGORY
+    //
+    // CURRENT PRODUCT IS EXCLUDED.
+    // ========================================================
+
+    const relatedProducts =
+      allProducts.filter(
+        item => {
+
+          const itemCategoryId =
+            item.category_id ||
+            item.categories?.id ||
+            "";
+
+
+          const sameCategory =
+            String(
+              itemCategoryId
+            ) ===
+            String(
+              categoryId
+            );
+
+
+          const currentProduct =
+            String(
+              item.id
+            ) ===
+            String(
+              currentProduct.id
+            );
+
+
+          return (
+            sameCategory &&
+            !currentProduct
+          );
+
+        }
+      );
+
+
+    // ========================================================
+    // NO OTHER PRODUCTS
+    // ========================================================
+
+    if (!relatedProducts.length) {
+
+      section.style.display =
+        "none";
+
+      return;
+
+    }
+
+
+    // ========================================================
+    // CATEGORY NAME
+    // ========================================================
+
+    const categoryName =
+      currentProduct.categories?.name ||
+      "Similar Flies";
+
+
+    // ========================================================
+    // SECTION TITLE
+    // ========================================================
+
+    if (title) {
+
+      title.textContent =
+        `More ${categoryName} Flies`;
+
+    }
+
+
+    // ========================================================
+    // SECTION DESCRIPTION
+    // ========================================================
+
+    if (description) {
+
+      description.textContent =
+        `Explore more flies from the ${categoryName} collection.`;
+
+    }
+
+
+    // ========================================================
+    // RENDER ALL RELATED PRODUCTS
+    //
+    // NO .slice(0, 8)
+    //
+    // Therefore ALL products in the same category appear.
+    // ========================================================
+
+    grid.innerHTML =
+      relatedProducts
+        .map(
+          productCard
+        )
+        .join("");
+
+
+    // ========================================================
+    // SHOW SECTION
+    // ========================================================
+
+    section.style.display =
+      "block";
+
+
+    // ========================================================
+    // ACTIVATE PRODUCT BUTTONS
+    // ========================================================
+
+    attachAddButtons(
+      grid,
+      relatedProducts
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Could not load related products:",
+      error
+    );
+
+
+    section.style.display =
+      "none";
+
+  }
+
+}
+
+
+// ============================================================
 // PRODUCT DETAIL
 // ============================================================
 
@@ -2424,7 +2734,9 @@ async function loadProductPage() {
 
 
   if (!box) {
+
     return;
+
   }
 
 
@@ -2484,6 +2796,10 @@ async function loadProductPage() {
         product.colors
       );
 
+
+    // ========================================================
+    // PRODUCT HTML
+    // ========================================================
 
     box.innerHTML = `
 
@@ -3273,6 +3589,7 @@ async function loadProductPage() {
                 Added to cart.
               </strong>
 
+
               <div
                 style="
                   margin-top:5px;
@@ -3312,6 +3629,19 @@ async function loadProductPage() {
 
     updateAddButton();
 
+
+    // ========================================================
+    // LOAD RELATED PRODUCTS
+    //
+    // THIS MUST RUN AFTER THE CURRENT PRODUCT HAS LOADED.
+    //
+    // It finds all other products with the same category_id.
+    // ========================================================
+
+    await loadRelatedProducts(
+      product
+    );
+
   } catch (error) {
 
     console.error(
@@ -3350,7 +3680,9 @@ async function loadCategoryPage() {
 
 
   if (!box) {
+
     return;
+
   }
 
 
