@@ -1,21 +1,34 @@
 // ============================================================
-// AMANI FISHING WHOLESALE
+// AMIANI'S FLY WHOLESALERS
 // ADMIN PANEL
 // DIRECT SUPABASE VERSION
 // PRICE = USD PER DOZEN
+//
+// ORDER FEATURES:
+// - View customer orders
+// - Update order status
+// - View size/color selections
+// - Send customer message by email
+// - Call customer
+// - WhatsApp customer
+// - Delete/remove orders
 // ============================================================
 
 (function () {
 
   "use strict";
 
+
   const ADMIN = {
 
     sb: null,
+
     user: null,
 
     categories: [],
+
     products: [],
+
     orders: [],
 
 
@@ -28,10 +41,13 @@
       try {
 
         if (!window.supabase) {
+
           throw new Error(
             "Supabase library has not loaded."
           );
+
         }
+
 
         if (!window.AMANI_SUPABASE) {
 
@@ -39,31 +55,47 @@
             !window.AMANI_SUPABASE_URL ||
             !window.AMANI_SUPABASE_ANON_KEY
           ) {
+
             throw new Error(
               "Supabase configuration is missing."
             );
+
           }
+
 
           window.AMANI_SUPABASE =
             window.supabase.createClient(
               window.AMANI_SUPABASE_URL,
               window.AMANI_SUPABASE_ANON_KEY
             );
+
         }
 
-        this.sb = window.AMANI_SUPABASE;
 
-        // Check current session
+        this.sb =
+          window.AMANI_SUPABASE;
+
+
+        // ----------------------------------------------------
+        // CHECK CURRENT SESSION
+        // ----------------------------------------------------
+
         const {
           data,
           error
-        } = await this.sb.auth.getSession();
+        } =
+          await this.sb.auth.getSession();
+
 
         if (error) {
           throw error;
         }
 
-        if (data && data.session) {
+
+        if (
+          data &&
+          data.session
+        ) {
 
           await this.showAdmin(
             data.session.user
@@ -75,9 +107,16 @@
 
         }
 
-        // Listen for login/logout
+
+        // ----------------------------------------------------
+        // AUTH STATE
+        // ----------------------------------------------------
+
         this.sb.auth.onAuthStateChange(
-          async (event, session) => {
+          async (
+            event,
+            session
+          ) => {
 
             if (session) {
 
@@ -96,6 +135,7 @@
           }
         );
 
+
       } catch (error) {
 
         console.error(
@@ -103,7 +143,9 @@
           error
         );
 
+
         this.showLogin();
+
 
         this.message(
           "loginMessage",
@@ -123,24 +165,44 @@
     showLogin() {
 
       const loginView =
-        document.getElementById("loginView");
+        document.getElementById(
+          "loginView"
+        );
+
 
       const adminView =
-        document.getElementById("adminView");
+        document.getElementById(
+          "adminView"
+        );
+
 
       const logout =
-        document.getElementById("logout");
+        document.getElementById(
+          "logout"
+        );
+
 
       if (loginView) {
-        loginView.style.display = "block";
+
+        loginView.style.display =
+          "block";
+
       }
+
 
       if (adminView) {
-        adminView.style.display = "none";
+
+        adminView.style.display =
+          "none";
+
       }
 
+
       if (logout) {
-        logout.style.display = "none";
+
+        logout.style.display =
+          "none";
+
       }
 
     },
@@ -153,52 +215,87 @@
     async showAdmin(user) {
 
       if (!user) {
+
         this.showLogin();
+
         return;
+
       }
+
 
       try {
 
         const isAdmin =
-          await this.checkAdmin(user.id);
+          await this.checkAdmin(
+            user.id
+          );
+
 
         if (!isAdmin) {
 
           await this.sb.auth.signOut();
 
+
           this.message(
             "loginMessage",
-            "This account is not an approved AMANI administrator.",
+            "This account is not an approved AMIANI administrator.",
             "error"
           );
 
+
           return;
+
         }
 
-        this.user = user;
+
+        this.user =
+          user;
+
 
         const loginView =
-          document.getElementById("loginView");
+          document.getElementById(
+            "loginView"
+          );
+
 
         const adminView =
-          document.getElementById("adminView");
+          document.getElementById(
+            "adminView"
+          );
+
 
         const logout =
-          document.getElementById("logout");
+          document.getElementById(
+            "logout"
+          );
+
 
         if (loginView) {
-          loginView.style.display = "none";
+
+          loginView.style.display =
+            "none";
+
         }
+
 
         if (adminView) {
-          adminView.style.display = "block";
+
+          adminView.style.display =
+            "block";
+
         }
+
 
         if (logout) {
-          logout.style.display = "inline-flex";
+
+          logout.style.display =
+            "inline-flex";
+
         }
 
+
         await this.refresh();
+
 
       } catch (error) {
 
@@ -206,6 +303,7 @@
           "SHOW ADMIN ERROR:",
           error
         );
+
 
         this.message(
           "loginMessage",
@@ -227,15 +325,23 @@
       const {
         data,
         error
-      } = await this.sb
-        .from("admin_users")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
+      } =
+        await this.sb
+          .from("admin_users")
+          .select("user_id")
+          .eq(
+            "user_id",
+            userId
+          )
+          .maybeSingle();
+
 
       if (error) {
+
         throw error;
+
       }
+
 
       return !!data;
 
@@ -254,19 +360,32 @@
           categories,
           products,
           orders
-        ] = await Promise.all([
+        ] =
+          await Promise.all([
 
-          this.getCategories(),
-          this.getProducts(),
-          this.getOrders()
+            this.getCategories(),
 
-        ]);
+            this.getProducts(),
 
-        this.categories = categories;
-        this.products = products;
-        this.orders = orders;
+            this.getOrders()
+
+          ]);
+
+
+        this.categories =
+          categories;
+
+
+        this.products =
+          products;
+
+
+        this.orders =
+          orders;
+
 
         this.renderAll();
+
 
       } catch (error) {
 
@@ -274,6 +393,7 @@
           "REFRESH ERROR:",
           error
         );
+
 
         alert(
           "Unable to load admin data:\n\n" +
@@ -294,16 +414,24 @@
       const {
         data,
         error
-      } = await this.sb
-        .from("categories")
-        .select("*")
-        .order("name", {
-          ascending: true
-        });
+      } =
+        await this.sb
+          .from("categories")
+          .select("*")
+          .order(
+            "name",
+            {
+              ascending: true
+            }
+          );
+
 
       if (error) {
+
         throw error;
+
       }
+
 
       return data || [];
 
@@ -319,21 +447,29 @@
       const {
         data,
         error
-      } = await this.sb
-        .from("products")
-        .select(`
-          *,
-          categories (
-            name
-          )
-        `)
-        .order("created_at", {
-          ascending: false
-        });
+      } =
+        await this.sb
+          .from("products")
+          .select(`
+            *,
+            categories (
+              name
+            )
+          `)
+          .order(
+            "created_at",
+            {
+              ascending: false
+            }
+          );
+
 
       if (error) {
+
         throw error;
+
       }
+
 
       return data || [];
 
@@ -349,16 +485,24 @@
       const {
         data,
         error
-      } = await this.sb
-        .from("orders")
-        .select("*")
-        .order("created_at", {
-          ascending: false
-        });
+      } =
+        await this.sb
+          .from("orders")
+          .select("*")
+          .order(
+            "created_at",
+            {
+              ascending: false
+            }
+          );
+
 
       if (error) {
+
         throw error;
+
       }
+
 
       return data || [];
 
@@ -369,56 +513,93 @@
     // IMAGE UPLOAD
     // ========================================================
 
-    async upload(file, bucket) {
+    async upload(
+      file,
+      bucket
+    ) {
 
       if (!file) {
+
         return "";
+
       }
 
+
       if (!this.user) {
+
         throw new Error(
           "You must be logged in to upload an image."
         );
+
       }
 
+
       if (!this.sb) {
+
         throw new Error(
           "Supabase is not connected."
         );
+
       }
 
-      // Only allow AMANI buckets
+
+      // ------------------------------------------------------
+      // VALID BUCKETS
+      // ------------------------------------------------------
+
       if (
         bucket !== "category-images" &&
         bucket !== "product-images"
       ) {
+
         throw new Error(
           "Invalid image storage bucket: " +
           bucket
         );
+
       }
 
-      // Validate file
+
+      // ------------------------------------------------------
+      // VALIDATE IMAGE
+      // ------------------------------------------------------
+
       if (
         !file.type ||
         !file.type.startsWith("image/")
       ) {
+
         throw new Error(
           "Please select a valid image file."
         );
+
       }
 
-      // Maximum 10MB
+
+      // ------------------------------------------------------
+      // MAXIMUM 10MB
+      // ------------------------------------------------------
+
       const maxSize =
         10 * 1024 * 1024;
 
-      if (file.size > maxSize) {
+
+      if (
+        file.size >
+        maxSize
+      ) {
+
         throw new Error(
           "Image is too large. Maximum size is 10MB."
         );
+
       }
 
-      // Clean filename
+
+      // ------------------------------------------------------
+      // CLEAN FILENAME
+      // ------------------------------------------------------
+
       const safeName =
         file.name
           .replace(
@@ -430,14 +611,24 @@
             "."
           );
 
-      // Unique ID
+
+      // ------------------------------------------------------
+      // UNIQUE ID
+      // ------------------------------------------------------
+
       const uniqueId =
         typeof crypto !== "undefined" &&
         typeof crypto.randomUUID === "function"
+
           ? crypto.randomUUID()
+
           : Date.now().toString();
 
-      // Storage path
+
+      // ------------------------------------------------------
+      // STORAGE PATH
+      // ------------------------------------------------------
+
       const path =
         "admin/" +
         this.user.id +
@@ -448,33 +639,41 @@
         "-" +
         safeName;
 
+
       console.log(
-        "AMANI IMAGE UPLOAD",
+        "AMIANI IMAGE UPLOAD",
         {
-          bucket: bucket,
-          path: path,
+          bucket,
+          path,
           fileName: file.name,
           fileType: file.type,
           fileSize: file.size
         }
       );
 
-      // Upload directly
+
+      // ------------------------------------------------------
+      // UPLOAD
+      // ------------------------------------------------------
+
       const {
         error: uploadError
-      } = await this.sb
-        .storage
-        .from(bucket)
-        .upload(
-          path,
-          file,
-          {
-            cacheControl: "3600",
-            upsert: false,
-            contentType:
-              file.type || "image/jpeg"
-          }
-        );
+      } =
+        await this.sb
+          .storage
+          .from(bucket)
+          .upload(
+            path,
+            file,
+            {
+              cacheControl: "3600",
+              upsert: false,
+              contentType:
+                file.type ||
+                "image/jpeg"
+            }
+          );
+
 
       if (uploadError) {
 
@@ -482,6 +681,7 @@
           "SUPABASE STORAGE UPLOAD ERROR:",
           uploadError
         );
+
 
         throw new Error(
           "Storage bucket '" +
@@ -492,13 +692,19 @@
 
       }
 
-      // Get public URL
+
+      // ------------------------------------------------------
+      // PUBLIC URL
+      // ------------------------------------------------------
+
       const {
         data: publicData
-      } = this.sb
-        .storage
-        .from(bucket)
-        .getPublicUrl(path);
+      } =
+        this.sb
+          .storage
+          .from(bucket)
+          .getPublicUrl(path);
+
 
       if (
         !publicData ||
@@ -511,10 +717,12 @@
 
       }
 
+
       console.log(
-        "AMANI IMAGE UPLOADED:",
+        "AMIANI IMAGE UPLOADED:",
         publicData.publicUrl
       );
+
 
       return publicData.publicUrl;
 
@@ -528,9 +736,13 @@
     renderAll() {
 
       this.renderCategories();
+
       this.renderProducts();
+
       this.renderOrders();
+
       this.renderCategorySelect();
+
       this.renderStats();
 
     },
@@ -543,11 +755,17 @@
     renderCategories() {
 
       const list =
-        document.getElementById("catList");
+        document.getElementById(
+          "catList"
+        );
+
 
       if (!list) {
+
         return;
+
       }
+
 
       if (!this.categories.length) {
 
@@ -558,69 +776,91 @@
 
       }
 
+
       list.innerHTML =
         this.categories
-          .map(category => {
+          .map(
+            category => {
 
-            const image =
-              category.image_url ||
-              this.placeholder(
-                category.name
-              );
+              const image =
+                category.image_url ||
+                this.placeholder(
+                  category.name
+                );
 
-            return `
-              <div class="admin-row">
 
-                <img
-                  src="${this.escapeAttr(image)}"
-                  alt="${this.escapeAttr(category.name)}"
-                  onerror="this.src=ADMIN.placeholder('${this.escapeAttr(category.name)}')"
-                >
+              return `
 
-                <div style="flex:1;min-width:0;">
+                <div class="admin-row">
 
-                  <strong>
-                    ${this.escape(category.name)}
-                  </strong>
+                  <img
+                    src="${this.escapeAttr(image)}"
+                    alt="${this.escapeAttr(category.name)}"
+                    onerror="this.src=ADMIN.placeholder('${this.escapeAttr(category.name)}')"
+                  >
 
-                  <div class="muted">
-                    ${this.escape(
-                      category.description || ""
-                    )}
+
+                  <div
+                    style="
+                      flex:1;
+                      min-width:0;
+                    "
+                  >
+
+                    <strong>
+                      ${this.escape(
+                        category.name
+                      )}
+                    </strong>
+
+
+                    <div class="muted">
+
+                      ${this.escape(
+                        category.description || ""
+                      )}
+
+                    </div>
+
+
+                    <small class="muted">
+
+                      ${this.escape(
+                        category.slug || ""
+                      )}
+
+                    </small>
+
                   </div>
 
-                  <small class="muted">
-                    ${this.escape(
-                      category.slug || ""
-                    )}
-                  </small>
+
+                  <div class="actions">
+
+                    <button
+                      type="button"
+                      class="btn btn-light btn-sm"
+                      onclick="ADMIN.editCategory('${this.escapeAttr(category.id)}')"
+                    >
+                      Edit
+                    </button>
+
+
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      onclick="ADMIN.deleteCategory('${this.escapeAttr(category.id)}')"
+                    >
+                      Delete
+                    </button>
+
+                  </div>
 
                 </div>
 
-                <div class="actions">
+              `;
 
-                  <button
-                    type="button"
-                    class="btn btn-light btn-sm"
-                    onclick="ADMIN.editCategory('${this.escapeAttr(category.id)}')"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn btn-danger btn-sm"
-                    onclick="ADMIN.deleteCategory('${this.escapeAttr(category.id)}')"
-                  >
-                    Delete
-                  </button>
-
-                </div>
-
-              </div>
-            `;
-
-          })
+            }
+          )
           .join("");
 
     },
@@ -633,11 +873,17 @@
     renderProducts() {
 
       const list =
-        document.getElementById("productList");
+        document.getElementById(
+          "productList"
+        );
+
 
       if (!list) {
+
         return;
+
       }
+
 
       if (!this.products.length) {
 
@@ -648,125 +894,180 @@
 
       }
 
+
       list.innerHTML =
         this.products
-          .map(product => {
+          .map(
+            product => {
 
-            const image =
-              product.image_url ||
-              this.placeholder(
-                product.name
-              );
+              const image =
+                product.image_url ||
+                this.placeholder(
+                  product.name
+                );
 
-            const category =
-              product.categories &&
-              product.categories.name
-                ? product.categories.name
-                : "No category";
 
-            const colors =
-              product.colors &&
-              String(product.colors).trim()
-                ? String(product.colors).trim()
-                : "Not specified";
+              const category =
+                product.categories &&
+                product.categories.name
 
-            return `
-              <div class="admin-row">
+                  ? product.categories.name
 
-                <img
-                  src="${this.escapeAttr(image)}"
-                  alt="${this.escapeAttr(product.name)}"
-                  onerror="this.src=ADMIN.placeholder('${this.escapeAttr(product.name)}')"
-                >
+                  : "No category";
 
-                <div style="flex:1;min-width:0;">
 
-                  <strong>
-                    ${this.escape(product.name)}
-                  </strong>
+              const colors =
+                product.colors &&
+                String(
+                  product.colors
+                ).trim()
 
-                  <div style="margin-top:5px;">
+                  ? String(
+                      product.colors
+                    ).trim()
+
+                  : "Not specified";
+
+
+              return `
+
+                <div class="admin-row">
+
+                  <img
+                    src="${this.escapeAttr(image)}"
+                    alt="${this.escapeAttr(product.name)}"
+                    onerror="this.src=ADMIN.placeholder('${this.escapeAttr(product.name)}')"
+                  >
+
+
+                  <div
+                    style="
+                      flex:1;
+                      min-width:0;
+                    "
+                  >
 
                     <strong>
-                      ${this.money(product.price)}
+                      ${this.escape(
+                        product.name
+                      )}
                     </strong>
 
-                    &nbsp; · &nbsp;
 
-                    ${this.escape(category)}
+                    <div
+                      style="
+                        margin-top:5px;
+                      "
+                    >
 
-                    &nbsp; · &nbsp;
+                      <strong>
+                        ${this.money(
+                          product.price
+                        )}
+                      </strong>
 
-                    Colors:
-                    ${this.escape(colors)}
+                      &nbsp; · &nbsp;
 
-                    &nbsp; · &nbsp;
+                      ${this.escape(
+                        category
+                      )}
 
-                    Stock:
-                    ${Number(product.stock || 0)}
+                      &nbsp; · &nbsp;
+
+                      Colors:
+                      ${this.escape(
+                        colors
+                      )}
+
+                      &nbsp; · &nbsp;
+
+                      Stock:
+                      ${Number(
+                        product.stock || 0
+                      )}
+
+                    </div>
+
+
+                    ${
+                      product.sizes
+
+                        ? `
+
+                          <div
+                            class="muted"
+                            style="
+                              margin-top:5px;
+                            "
+                          >
+
+                            Sizes:
+                            ${this.escape(
+                              product.sizes
+                            )}
+
+                          </div>
+
+                        `
+
+                        : ""
+                    }
+
+
+                    ${
+                      product.featured
+
+                        ? `
+
+                          <span
+                            style="
+                              display:inline-block;
+                              margin-top:5px;
+                              padding:3px 8px;
+                              border-radius:20px;
+                              background:#d7a83e;
+                              color:#111;
+                              font-size:12px;
+                            "
+                          >
+                            Featured
+                          </span>
+
+                        `
+
+                        : ""
+                    }
 
                   </div>
 
-                  ${
-                    product.sizes
-                      ? `
-                        <div
-                          class="muted"
-                          style="margin-top:5px;"
-                        >
-                          Sizes:
-                          ${this.escape(product.sizes)}
-                        </div>
-                      `
-                      : ""
-                  }
 
-                  ${
-                    product.featured
-                      ? `
-                        <span
-                          style="
-                            display:inline-block;
-                            margin-top:5px;
-                            padding:3px 8px;
-                            border-radius:20px;
-                            background:#d7a83e;
-                            color:#111;
-                            font-size:12px;
-                          "
-                        >
-                          Featured
-                        </span>
-                      `
-                      : ""
-                  }
+                  <div class="actions">
+
+                    <button
+                      type="button"
+                      class="btn btn-light btn-sm"
+                      onclick="ADMIN.editProduct('${this.escapeAttr(product.id)}')"
+                    >
+                      Edit
+                    </button>
+
+
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      onclick="ADMIN.deleteProduct('${this.escapeAttr(product.id)}')"
+                    >
+                      Delete
+                    </button>
+
+                  </div>
 
                 </div>
 
-                <div class="actions">
+              `;
 
-                  <button
-                    type="button"
-                    class="btn btn-light btn-sm"
-                    onclick="ADMIN.editProduct('${this.escapeAttr(product.id)}')"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn btn-danger btn-sm"
-                    onclick="ADMIN.deleteProduct('${this.escapeAttr(product.id)}')"
-                  >
-                    Delete
-                  </button>
-
-                </div>
-
-              </div>
-            `;
-
-          })
+            }
+          )
           .join("");
 
     },
@@ -779,184 +1080,778 @@
     renderOrders() {
 
       const list =
-        document.getElementById("orderList");
+        document.getElementById(
+          "orderList"
+        );
+
 
       if (!list) {
+
         return;
+
       }
+
 
       if (!this.orders.length) {
 
-        list.innerHTML =
-          '<div class="empty">No orders yet.</div>';
+        list.innerHTML = `
+
+          <div
+            class="empty"
+            style="
+              padding:30px;
+              text-align:center;
+            "
+          >
+
+            <strong>
+              No orders yet.
+            </strong>
+
+            <div
+              class="muted"
+              style="
+                margin-top:5px;
+              "
+            >
+              Customer orders will appear here.
+            </div>
+
+          </div>
+
+        `;
 
         return;
 
       }
 
+
       list.innerHTML =
         this.orders
-          .map(order => {
+          .map(
+            order => {
 
-            let items = [];
 
-            if (Array.isArray(order.items)) {
-              items = order.items;
-            }
+              // ------------------------------------------------
+              // ORDER ITEMS
+              // ------------------------------------------------
 
-            const itemsHtml =
-              items.length
+              let items = [];
 
-                ? items
-                    .map(item => {
 
-                      const qty =
-                        Number(item.qty || 0);
+              if (
+                Array.isArray(
+                  order.items
+                )
+              ) {
 
-                      const price =
-                        Number(item.price || 0);
+                items =
+                  order.items;
 
-                      return `
-                        <div style="margin-bottom:6px;">
-                          ${this.escape(
-                            item.name || "Item"
-                          )}
-                          × ${qty} dozen
-                          —
-                          ${this.money(
-                            price * qty
-                          )}
-                        </div>
-                      `;
+              }
 
-                    })
-                    .join("")
 
-                : "<div>No item details.</div>";
+              const itemsHtml =
+                items.length
 
-            return `
-              <div
-                class="card"
-                style="padding:18px;margin-bottom:15px;"
-              >
+                  ? items
+                      .map(
+                        item => {
+
+                          const qty =
+                            Number(
+                              item.qty || 0
+                            );
+
+
+                          const price =
+                            Number(
+                              item.price || 0
+                            );
+
+
+                          const size =
+                            item.size
+                              ? `
+
+                                <div
+                                  style="
+                                    margin-top:4px;
+                                    color:#666;
+                                    font-size:13px;
+                                  "
+                                >
+
+                                  Size:
+                                  ${this.escape(
+                                    item.size
+                                  )}
+
+                                </div>
+
+                              `
+                              : "";
+
+
+                          const color =
+                            item.color
+                              ? `
+
+                                <div
+                                  style="
+                                    color:#666;
+                                    font-size:13px;
+                                  "
+                                >
+
+                                  Color:
+                                  ${this.escape(
+                                    item.color
+                                  )}
+
+                                </div>
+
+                              `
+                              : "";
+
+
+                          return `
+
+                            <div
+                              style="
+                                padding:12px 0;
+                                border-bottom:1px solid #eee;
+                              "
+                            >
+
+                              <strong>
+
+                                ${this.escape(
+                                  item.name ||
+                                  "Item"
+                                )}
+
+                              </strong>
+
+
+                              <div
+                                style="
+                                  margin-top:4px;
+                                "
+                              >
+
+                                ${qty}
+                                dozen
+                                ×
+                                ${this.money(
+                                  price
+                                )}
+
+                              </div>
+
+
+                              ${size}
+
+                              ${color}
+
+
+                              <div
+                                style="
+                                  margin-top:5px;
+                                  font-weight:600;
+                                "
+                              >
+
+                                Line total:
+                                ${this.money(
+                                  price * qty
+                                )}
+
+                              </div>
+
+                            </div>
+
+                          `;
+
+                        }
+                      )
+                      .join("")
+
+                  : `
+
+                      <div
+                        class="muted"
+                        style="
+                          padding:10px 0;
+                        "
+                      >
+                        No item details available.
+                      </div>
+
+                    `;
+
+
+              // ------------------------------------------------
+              // CUSTOMER INFORMATION
+              // ------------------------------------------------
+
+              const customerName =
+                String(
+                  order.customer_name ||
+                  "Customer"
+                ).trim();
+
+
+              const customerEmail =
+                String(
+                  order.email || ""
+                ).trim();
+
+
+              const customerPhone =
+                String(
+                  order.phone || ""
+                ).trim();
+
+
+              // ------------------------------------------------
+              // ORDER DATE
+              // ------------------------------------------------
+
+              let orderDate = "";
+
+
+              if (
+                order.created_at
+              ) {
+
+                try {
+
+                  orderDate =
+                    new Date(
+                      order.created_at
+                    ).toLocaleString(
+                      "en-KE",
+                      {
+                        dateStyle:
+                          "medium",
+                        timeStyle:
+                          "short"
+                      }
+                    );
+
+                } catch (error) {
+
+                  orderDate =
+                    String(
+                      order.created_at
+                    );
+
+                }
+
+              }
+
+
+              // ------------------------------------------------
+              // STATUS
+              // ------------------------------------------------
+
+              const statuses = [
+
+                "pending",
+
+                "confirmed",
+
+                "paid",
+
+                "shipped",
+
+                "completed",
+
+                "cancelled"
+
+              ];
+
+
+              const currentStatus =
+                String(
+                  order.status ||
+                  "pending"
+                ).toLowerCase();
+
+
+              // ------------------------------------------------
+              // EMAIL BUTTON
+              // ------------------------------------------------
+
+              const emailButton =
+                customerEmail
+
+                  ? `
+
+                      <button
+                        type="button"
+                        class="btn btn-primary btn-sm"
+                        onclick="ADMIN.messageCustomer('${this.escapeAttr(order.id)}')"
+                      >
+                        Send Message
+                      </button>
+
+                    `
+
+                  : `
+
+                      <button
+                        type="button"
+                        class="btn btn-light btn-sm"
+                        disabled
+                        title="No email address was provided."
+                      >
+                        No Email
+                      </button>
+
+                    `;
+
+
+              // ------------------------------------------------
+              // PHONE BUTTON
+              // ------------------------------------------------
+
+              const phoneButton =
+                customerPhone
+
+                  ? `
+
+                      <a
+                        href="tel:${this.escapeAttr(customerPhone)}"
+                        class="btn btn-light btn-sm"
+                      >
+                        Call Customer
+                      </a>
+
+                    `
+
+                  : "";
+
+
+              // ------------------------------------------------
+              // WHATSAPP NUMBER
+              // ------------------------------------------------
+
+              let whatsappNumber =
+                customerPhone.replace(
+                  /[^0-9]/g,
+                  ""
+                );
+
+
+              /*
+               * Kenya:
+               *
+               * 0722123456
+               *
+               * becomes:
+               *
+               * 254722123456
+               */
+
+              if (
+                whatsappNumber.startsWith("0") &&
+                whatsappNumber.length === 10
+              ) {
+
+                whatsappNumber =
+                  "254" +
+                  whatsappNumber.substring(
+                    1
+                  );
+
+              }
+
+
+              const whatsappButton =
+                whatsappNumber
+
+                  ? `
+
+                      <a
+                        href="https://wa.me/${this.escapeAttr(whatsappNumber)}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-light btn-sm"
+                      >
+                        WhatsApp
+                      </a>
+
+                    `
+
+                  : "";
+
+
+              // ------------------------------------------------
+              // ORDER CARD
+              // ------------------------------------------------
+
+              return `
 
                 <div
+                  class="card"
                   style="
-                    display:flex;
-                    justify-content:space-between;
-                    gap:15px;
-                    flex-wrap:wrap;
+                    padding:20px;
+                    margin-bottom:18px;
                   "
                 >
 
-                  <div>
 
-                    <strong>
-                      ${this.escape(
-                        order.customer_name || ""
-                      )}
-                    </strong>
+                  <!-- ======================================
+                       ORDER HEADER
+                  ======================================= -->
 
-                    <div>
-                      ${this.escape(
-                        order.phone || ""
-                      )}
+                  <div
+                    style="
+                      display:flex;
+                      justify-content:space-between;
+                      align-items:flex-start;
+                      gap:20px;
+                      flex-wrap:wrap;
+                    "
+                  >
+
+
+                    <!-- CUSTOMER -->
+
+                    <div
+                      style="
+                        flex:1;
+                        min-width:240px;
+                      "
+                    >
+
+                      <div
+                        style="
+                          font-size:19px;
+                          font-weight:700;
+                        "
+                      >
+
+                        ${this.escape(
+                          customerName
+                        )}
+
+                      </div>
+
 
                       ${
-                        order.email
-                          ? " · " +
-                            this.escape(
-                              order.email
-                            )
+                        customerEmail
+
+                          ? `
+
+                            <div
+                              style="
+                                margin-top:6px;
+                              "
+                            >
+
+                              Email:
+
+                              <a
+                                href="mailto:${this.escapeAttr(customerEmail)}"
+                              >
+                                ${this.escape(
+                                  customerEmail
+                                )}
+                              </a>
+
+                            </div>
+
+                          `
+
+                          : `
+
+                            <div
+                              class="muted"
+                              style="
+                                margin-top:6px;
+                              "
+                            >
+                              No email provided
+                            </div>
+
+                          `
+                      }
+
+
+                      ${
+                        customerPhone
+
+                          ? `
+
+                            <div
+                              style="
+                                margin-top:4px;
+                              "
+                            >
+
+                              Phone:
+                              ${this.escape(
+                                customerPhone
+                              )}
+
+                            </div>
+
+                          `
+
                           : ""
                       }
+
+
+                      ${
+                        order.address
+
+                          ? `
+
+                            <div
+                              class="muted"
+                              style="
+                                margin-top:4px;
+                              "
+                            >
+
+                              Address:
+                              ${this.escape(
+                                order.address
+                              )}
+
+                            </div>
+
+                          `
+
+                          : ""
+                      }
+
+
+                      ${
+                        orderDate
+
+                          ? `
+
+                            <div
+                              class="muted"
+                              style="
+                                margin-top:6px;
+                                font-size:13px;
+                              "
+                            >
+
+                              Ordered:
+                              ${this.escape(
+                                orderDate
+                              )}
+
+                            </div>
+
+                          `
+
+                          : ""
+                      }
+
+
+                      <div
+                        class="muted"
+                        style="
+                          margin-top:5px;
+                          font-size:12px;
+                          word-break:break-all;
+                        "
+                      >
+
+                        Order ID:
+                        ${this.escape(
+                          order.id
+                        )}
+
+                      </div>
+
                     </div>
 
-                    <div class="muted">
-                      ${this.escape(
-                        order.address || ""
-                      )}
-                    </div>
 
-                    ${
-                      order.notes
-                        ? `
-                          <div
-                            style="
-                              margin-top:8px;
-                            "
-                          >
-                            <strong>
-                              Notes:
-                            </strong>
-                            ${this.escape(
-                              order.notes
-                            )}
-                          </div>
-                        `
-                        : ""
-                    }
+                    <!-- STATUS -->
+
+                    <select
+                      class="field"
+                      style="
+                        max-width:190px;
+                        min-width:160px;
+                      "
+                      onchange="ADMIN.status('${this.escapeAttr(order.id)}', this.value)"
+                    >
+
+                      ${
+                        statuses
+                          .map(
+                            status => `
+
+                              <option
+                                value="${this.escapeAttr(status)}"
+                                ${
+                                  currentStatus ===
+                                  status
+                                    ? "selected"
+                                    : ""
+                                }
+                              >
+
+                                ${this.escape(
+                                  status
+                                )}
+
+                              </option>
+
+                            `
+                          )
+                          .join("")
+                      }
+
+                    </select>
 
                   </div>
 
-                  <select
-                    class="field"
-                    style="max-width:180px;"
-                    onchange="ADMIN.status('${this.escapeAttr(order.id)}', this.value)"
+
+                  <!-- ======================================
+                       ORDER ITEMS
+                  ======================================= -->
+
+                  <div
+                    style="
+                      margin-top:20px;
+                      padding-top:15px;
+                      border-top:1px solid #eee;
+                    "
                   >
 
-                    ${
-                      [
-                        "pending",
-                        "confirmed",
-                        "paid",
-                        "shipped",
-                        "completed",
-                        "cancelled"
-                      ]
-                        .map(
-                          status => `
-                            <option
-                              value="${this.escapeAttr(status)}"
-                              ${
-                                order.status === status
-                                  ? "selected"
-                                  : ""
-                              }
-                            >
-                              ${this.escape(status)}
-                            </option>
-                          `
-                        )
-                        .join("")
-                    }
+                    <h3
+                      style="
+                        margin:0 0 8px;
+                        font-size:16px;
+                      "
+                    >
+                      Ordered Products
+                    </h3>
 
-                  </select>
+
+                    ${itemsHtml}
+
+                  </div>
+
+
+                  <!-- ======================================
+                       TOTAL
+                  ======================================= -->
+
+                  <div
+                    style="
+                      margin-top:16px;
+                      padding-top:15px;
+                      border-top:1px solid #eee;
+                      font-size:20px;
+                    "
+                  >
+
+                    <strong>
+
+                      Total:
+                      ${this.money(
+                        order.total
+                      )}
+
+                    </strong>
+
+                  </div>
+
+
+                  <!-- ======================================
+                       CUSTOMER NOTES
+                  ======================================= -->
+
+                  ${
+                    order.notes
+
+                      ? `
+
+                        <div
+                          style="
+                            margin-top:15px;
+                            padding:13px;
+                            background:#f7f7f7;
+                            border-radius:8px;
+                          "
+                        >
+
+                          <strong>
+                            Customer Notes
+                          </strong>
+
+
+                          <div
+                            style="
+                              margin-top:6px;
+                            "
+                          >
+
+                            ${this.escape(
+                              order.notes
+                            )}
+
+                          </div>
+
+                        </div>
+
+                      `
+
+                      : ""
+                  }
+
+
+                  <!-- ======================================
+                       ACTION BUTTONS
+                  ======================================= -->
+
+                  <div
+                    style="
+                      display:flex;
+                      gap:8px;
+                      flex-wrap:wrap;
+                      margin-top:20px;
+                      padding-top:15px;
+                      border-top:1px solid #eee;
+                    "
+                  >
+
+                    ${emailButton}
+
+                    ${phoneButton}
+
+                    ${whatsappButton}
+
+
+                    <!-- DELETE -->
+
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      onclick="ADMIN.deleteOrder('${this.escapeAttr(order.id)}')"
+                    >
+                      Delete Order
+                    </button>
+
+                  </div>
 
                 </div>
 
-                <hr>
+              `;
 
-                <div>
-                  ${itemsHtml}
-                </div>
-
-                <div
-                  style="
-                    margin-top:12px;
-                    font-size:18px;
-                  "
-                >
-                  <strong>
-                    Total:
-                    ${this.money(order.total)}
-                  </strong>
-                </div>
-
-              </div>
-            `;
-
-          })
+            }
+          )
           .join("");
 
     },
@@ -969,35 +1864,58 @@
     renderCategorySelect() {
 
       const select =
-        document.getElementById("catSelect");
+        document.getElementById(
+          "catSelect"
+        );
+
 
       if (!select) {
+
         return;
+
       }
+
 
       const current =
         select.value;
 
+
       select.innerHTML =
         '<option value="">Select category</option>' +
+
         this.categories
           .map(
             category => `
-              <option value="${this.escapeAttr(category.id)}">
-                ${this.escape(category.name)}
+
+              <option
+                value="${this.escapeAttr(
+                  category.id
+                )}"
+              >
+
+                ${this.escape(
+                  category.name
+                )}
+
               </option>
+
             `
           )
           .join("");
+
 
       if (
         current &&
         this.categories.some(
           category =>
-            category.id === current
+            category.id ===
+            current
         )
       ) {
-        select.value = current;
+
+        select.value =
+          current;
+
       }
 
     },
@@ -1010,46 +1928,78 @@
     renderStats() {
 
       const cats =
-        document.getElementById("statCats");
+        document.getElementById(
+          "statCats"
+        );
+
 
       const products =
-        document.getElementById("statProducts");
+        document.getElementById(
+          "statProducts"
+        );
+
 
       const orders =
-        document.getElementById("statOrders");
+        document.getElementById(
+          "statOrders"
+        );
+
 
       const sales =
-        document.getElementById("statSales");
+        document.getElementById(
+          "statSales"
+        );
+
 
       if (cats) {
+
         cats.textContent =
           this.categories.length;
+
       }
+
 
       if (products) {
+
         products.textContent =
           this.products.length;
+
       }
 
+
       if (orders) {
+
         orders.textContent =
           this.orders.length;
+
       }
+
 
       if (sales) {
 
         const total =
           this.orders.reduce(
-            (sum, order) =>
-              sum +
-              Number(
-                order.total || 0
-              ),
+            (
+              sum,
+              order
+            ) => {
+
+              return (
+                sum +
+                Number(
+                  order.total || 0
+                )
+              );
+
+            },
             0
           );
 
+
         sales.textContent =
-          this.money(total);
+          this.money(
+            total
+          );
 
       }
 
@@ -1064,45 +2014,70 @@
 
       event.preventDefault();
 
+
       const form =
         event.target;
+
 
       const button =
         form.querySelector(
           'button[type="submit"]'
         );
 
+
       try {
 
-        button.disabled = true;
-        button.textContent = "Saving...";
+        button.disabled =
+          true;
+
+
+        button.textContent =
+          "Saving...";
+
 
         const data =
-          new FormData(form);
+          new FormData(
+            form
+          );
+
 
         const id =
           String(
-            data.get("id") || ""
+            data.get("id") ||
+            ""
           ).trim();
+
 
         const name =
           String(
-            data.get("name") || ""
+            data.get("name") ||
+            ""
           ).trim();
 
+
         if (!name) {
+
           throw new Error(
             "Category name is required."
           );
+
         }
+
 
         let imageUrl =
           String(
-            data.get("image_url") || ""
+            data.get(
+              "image_url"
+            ) ||
+            ""
           ).trim();
 
+
         const image =
-          data.get("image");
+          data.get(
+            "image"
+          );
+
 
         if (
           image &&
@@ -1118,16 +2093,22 @@
 
         }
 
+
         const payload = {
 
           name,
 
           slug:
-            this.slug(name),
+            this.slug(
+              name
+            ),
 
           description:
             String(
-              data.get("description") || ""
+              data.get(
+                "description"
+              ) ||
+              ""
             ).trim(),
 
           image_url:
@@ -1135,38 +2116,58 @@
 
         };
 
+
         let result;
+
 
         if (id) {
 
           result =
             await this.sb
-              .from("categories")
-              .update(payload)
-              .eq("id", id);
+              .from(
+                "categories"
+              )
+              .update(
+                payload
+              )
+              .eq(
+                "id",
+                id
+              );
 
         } else {
 
           result =
             await this.sb
-              .from("categories")
-              .insert(payload);
+              .from(
+                "categories"
+              )
+              .insert(
+                payload
+              );
 
         }
+
 
         if (result.error) {
+
           throw result.error;
+
         }
+
 
         this.clearCategoryForm();
 
+
         await this.refresh();
+
 
         alert(
           id
             ? "Category updated successfully."
             : "Category added successfully."
         );
+
 
       } catch (error) {
 
@@ -1175,15 +2176,21 @@
           error
         );
 
+
         alert(
           "Could not save category:\n\n" +
           error.message
         );
 
+
       } finally {
 
-        button.disabled = false;
-        button.textContent = "Save Category";
+        button.disabled =
+          false;
+
+
+        button.textContent =
+          "Save Category";
 
       }
 
@@ -1198,79 +2205,131 @@
 
       event.preventDefault();
 
+
       const form =
         event.target;
+
 
       const button =
         form.querySelector(
           'button[type="submit"]'
         );
 
+
       try {
 
-        button.disabled = true;
-        button.textContent = "Saving...";
+        button.disabled =
+          true;
+
+
+        button.textContent =
+          "Saving...";
+
 
         const data =
-          new FormData(form);
+          new FormData(
+            form
+          );
+
 
         const id =
           String(
-            data.get("id") || ""
+            data.get("id") ||
+            ""
           ).trim();
+
 
         const name =
           String(
-            data.get("name") || ""
+            data.get("name") ||
+            ""
           ).trim();
 
+
         if (!name) {
+
           throw new Error(
             "Product name is required."
           );
+
         }
+
 
         const categoryId =
           String(
-            data.get("category_id") || ""
+            data.get(
+              "category_id"
+            ) ||
+            ""
           ).trim();
 
+
         if (!categoryId) {
+
           throw new Error(
             "Please select a category."
           );
+
         }
 
-        // PRICE IS USD PER DOZEN
+
+        // ----------------------------------------------------
+        // PRICE = USD PER DOZEN
+        // ----------------------------------------------------
+
         const price =
           Number(
-            data.get("price") || 0
+            data.get(
+              "price"
+            ) ||
+            0
           );
 
+
         if (
-          !Number.isFinite(price) ||
+          !Number.isFinite(
+            price
+          ) ||
           price < 0
         ) {
+
           throw new Error(
             "Please enter a valid price per dozen in USD."
           );
+
         }
+
+
+        // ----------------------------------------------------
+        // STOCK = DOZENS
+        // ----------------------------------------------------
 
         const stock =
           Math.max(
             0,
             Number(
-              data.get("stock") || 0
+              data.get(
+                "stock"
+              ) ||
+              0
             )
           );
 
+
         let imageUrl =
           String(
-            data.get("image_url") || ""
+            data.get(
+              "image_url"
+            ) ||
+            ""
           ).trim();
 
+
         const image =
-          data.get("image");
+          data.get(
+            "image"
+          );
+
 
         if (
           image &&
@@ -1286,6 +2345,7 @@
 
         }
 
+
         const payload = {
 
           name,
@@ -1293,7 +2353,6 @@
           category_id:
             categoryId,
 
-          // Stored value = USD per dozen
           price,
 
           image_url:
@@ -1301,59 +2360,89 @@
 
           sizes:
             String(
-              data.get("sizes") || ""
+              data.get(
+                "sizes"
+              ) ||
+              ""
             ).trim(),
 
-          // Available fly colors
           colors:
             String(
-              data.get("colors") || ""
+              data.get(
+                "colors"
+              ) ||
+              ""
             ).trim(),
 
           description:
             String(
-              data.get("description") || ""
+              data.get(
+                "description"
+              ) ||
+              ""
             ).trim(),
 
           stock,
 
           featured:
-            data.get("featured") === "on"
+            data.get(
+              "featured"
+            ) === "on"
 
         };
 
+
         let result;
+
 
         if (id) {
 
           result =
             await this.sb
-              .from("products")
-              .update(payload)
-              .eq("id", id);
+              .from(
+                "products"
+              )
+              .update(
+                payload
+              )
+              .eq(
+                "id",
+                id
+              );
 
         } else {
 
           result =
             await this.sb
-              .from("products")
-              .insert(payload);
+              .from(
+                "products"
+              )
+              .insert(
+                payload
+              );
 
         }
+
 
         if (result.error) {
+
           throw result.error;
+
         }
+
 
         this.clearProductForm();
 
+
         await this.refresh();
+
 
         alert(
           id
             ? "Product updated successfully."
             : "Product added successfully."
         );
+
 
       } catch (error) {
 
@@ -1362,15 +2451,21 @@
           error
         );
 
+
         alert(
           "Could not save product:\n\n" +
           error.message
         );
 
+
       } finally {
 
-        button.disabled = false;
-        button.textContent = "Save Product";
+        button.disabled =
+          false;
+
+
+        button.textContent =
+          "Save Product";
 
       }
 
@@ -1385,42 +2480,64 @@
 
       const category =
         this.categories.find(
-          item => item.id === id
+          item =>
+            item.id === id
         );
 
+
       if (!category) {
+
         return;
+
       }
+
 
       const form =
         document.getElementById(
           "categoryForm"
         );
 
+
       if (!form) {
+
         return;
+
       }
+
 
       form.elements.id.value =
         category.id;
 
+
       form.elements.name.value =
-        category.name || "";
+        category.name ||
+        "";
+
 
       form.elements.description.value =
-        category.description || "";
+        category.description ||
+        "";
+
 
       form.elements.image_url.value =
-        category.image_url || "";
+        category.image_url ||
+        "";
+
 
       form.elements.image.value =
         "";
 
-      this.showTab("categories");
+
+      this.showTab(
+        "categories"
+      );
+
 
       form.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
+        behavior:
+          "smooth",
+        block:
+          "start"
       });
 
     },
@@ -1434,64 +2551,99 @@
 
       const product =
         this.products.find(
-          item => item.id === id
+          item =>
+            item.id === id
         );
 
+
       if (!product) {
+
         return;
+
       }
+
 
       const form =
         document.getElementById(
           "productForm"
         );
 
+
       if (!form) {
+
         return;
+
       }
+
 
       form.elements.id.value =
         product.id;
 
+
       form.elements.name.value =
-        product.name || "";
+        product.name ||
+        "";
+
 
       form.elements.category_id.value =
-        product.category_id || "";
+        product.category_id ||
+        "";
 
-      // Price stored as USD per dozen
+
       form.elements.price.value =
-        product.price ?? "";
+        product.price ??
+        "";
+
 
       form.elements.image_url.value =
-        product.image_url || "";
+        product.image_url ||
+        "";
+
 
       form.elements.sizes.value =
-        product.sizes || "";
+        product.sizes ||
+        "";
 
-      // Colors
-      if (form.elements.colors) {
+
+      if (
+        form.elements.colors
+      ) {
+
         form.elements.colors.value =
-          product.colors || "";
+          product.colors ||
+          "";
+
       }
 
+
       form.elements.description.value =
-        product.description || "";
+        product.description ||
+        "";
+
 
       form.elements.stock.value =
-        product.stock ?? 0;
+        product.stock ??
+        0;
+
 
       form.elements.featured.checked =
         !!product.featured;
 
+
       form.elements.image.value =
         "";
 
-      this.showTab("products");
+
+      this.showTab(
+        "products"
+      );
+
 
       form.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
+        behavior:
+          "smooth",
+        block:
+          "start"
       });
 
     },
@@ -1505,40 +2657,61 @@
 
       const category =
         this.categories.find(
-          item => item.id === id
+          item =>
+            item.id === id
         );
 
+
       if (!category) {
+
         return;
+
       }
+
 
       const confirmed =
         confirm(
           `Delete category "${category.name}"?`
         );
 
+
       if (!confirmed) {
+
         return;
+
       }
+
 
       try {
 
         const {
           error
-        } = await this.sb
-          .from("categories")
-          .delete()
-          .eq("id", id);
+        } =
+          await this.sb
+            .from(
+              "categories"
+            )
+            .delete()
+            .eq(
+              "id",
+              id
+            );
+
 
         if (error) {
+
           throw error;
+
         }
 
+
         await this.refresh();
+
 
         alert(
           "Category deleted successfully."
         );
+
 
       } catch (error) {
 
@@ -1546,6 +2719,7 @@
           "DELETE CATEGORY:",
           error
         );
+
 
         alert(
           "Could not delete category:\n\n" +
@@ -1565,40 +2739,61 @@
 
       const product =
         this.products.find(
-          item => item.id === id
+          item =>
+            item.id === id
         );
 
+
       if (!product) {
+
         return;
+
       }
+
 
       const confirmed =
         confirm(
           `Delete product "${product.name}"?`
         );
 
+
       if (!confirmed) {
+
         return;
+
       }
+
 
       try {
 
         const {
           error
-        } = await this.sb
-          .from("products")
-          .delete()
-          .eq("id", id);
+        } =
+          await this.sb
+            .from(
+              "products"
+            )
+            .delete()
+            .eq(
+              "id",
+              id
+            );
+
 
         if (error) {
+
           throw error;
+
         }
 
+
         await this.refresh();
+
 
         alert(
           "Product deleted successfully."
         );
+
 
       } catch (error) {
 
@@ -1606,6 +2801,7 @@
           "DELETE PRODUCT:",
           error
         );
+
 
         alert(
           "Could not delete product:\n\n" +
@@ -1621,24 +2817,61 @@
     // UPDATE ORDER STATUS
     // ========================================================
 
-    async status(id, status) {
+    async status(
+      id,
+      status
+    ) {
 
       try {
 
         const {
           error
-        } = await this.sb
-          .from("orders")
-          .update({
-            status
-          })
-          .eq("id", id);
+        } =
+          await this.sb
+            .from(
+              "orders"
+            )
+            .update({
+              status:
+                status
+            })
+            .eq(
+              "id",
+              id
+            );
+
 
         if (error) {
+
           throw error;
+
         }
 
-        await this.refresh();
+
+        // Update locally first
+
+        const order =
+          this.orders.find(
+            item =>
+              String(
+                item.id
+              ) ===
+              String(
+                id
+              )
+          );
+
+
+        if (order) {
+
+          order.status =
+            status;
+
+        }
+
+
+        this.renderOrders();
+
 
       } catch (error) {
 
@@ -1647,12 +2880,507 @@
           error
         );
 
+
         alert(
           "Could not update order:\n\n" +
           error.message
         );
 
+
         await this.refresh();
+
+      }
+
+    },
+
+
+    // ========================================================
+    // SEND CUSTOMER MESSAGE
+    // ========================================================
+    //
+    // This uses mailto so no email password/API key is stored
+    // in the browser.
+    //
+    // ========================================================
+
+    messageCustomer(id) {
+
+      const order =
+        this.orders.find(
+          item =>
+            String(
+              item.id
+            ) ===
+            String(
+              id
+            )
+        );
+
+
+      if (!order) {
+
+        alert(
+          "Order could not be found."
+        );
+
+        return;
+
+      }
+
+
+      const email =
+        String(
+          order.email ||
+          ""
+        ).trim();
+
+
+      if (!email) {
+
+        alert(
+          "This order does not contain a customer email address."
+        );
+
+        return;
+
+      }
+
+
+      const customerName =
+        String(
+          order.customer_name ||
+          "Customer"
+        ).trim();
+
+
+      // ------------------------------------------------------
+      // ORDER ITEMS
+      // ------------------------------------------------------
+
+      let items = [];
+
+
+      if (
+        Array.isArray(
+          order.items
+        )
+      ) {
+
+        items =
+          order.items;
+
+      }
+
+
+      const itemLines =
+        items.length
+
+          ? items
+              .map(
+                item => {
+
+                  const qty =
+                    Number(
+                      item.qty ||
+                      0
+                    );
+
+
+                  const price =
+                    Number(
+                      item.price ||
+                      0
+                    );
+
+
+                  let line =
+                    `${item.name || "Product"} — ${qty} dozen — ${this.money(price * qty)}`;
+
+
+                  if (
+                    item.size
+                  ) {
+
+                    line +=
+                      ` — Size: ${item.size}`;
+
+                  }
+
+
+                  if (
+                    item.color
+                  ) {
+
+                    line +=
+                      ` — Color: ${item.color}`;
+
+                  }
+
+
+                  return line;
+
+                }
+              )
+              .join(
+                "\n"
+              )
+
+          : "No item details available.";
+
+
+      // ------------------------------------------------------
+      // DEFAULT MESSAGE
+      // ------------------------------------------------------
+
+      const defaultMessage =
+
+`Hello ${customerName},
+
+Thank you for your order with Amiani's Fly Wholesalers.
+
+Order ID: ${order.id}
+
+Order details:
+
+${itemLines}
+
+Order total: ${this.money(order.total)}
+
+Current order status: ${order.status || "pending"}
+
+If you have any questions or need any changes to your order, please reply to this email.
+
+Kind regards,
+Amiani's Fly Wholesalers`;
+
+
+      // ------------------------------------------------------
+      // ADMIN CAN EDIT MESSAGE
+      // ------------------------------------------------------
+
+      const message =
+        prompt(
+          `Message to ${customerName}:`,
+          defaultMessage
+        );
+
+
+      if (
+        message === null
+      ) {
+
+        return;
+
+      }
+
+
+      // ------------------------------------------------------
+      // SUBJECT
+      // ------------------------------------------------------
+
+      const subject =
+        `Order ${order.id} - Amiani's Fly Wholesalers`;
+
+
+      // ------------------------------------------------------
+      // MAILTO
+      // ------------------------------------------------------
+
+      const mailto =
+        "mailto:" +
+        encodeURIComponent(
+          email
+        ) +
+        "?subject=" +
+        encodeURIComponent(
+          subject
+        ) +
+        "&body=" +
+        encodeURIComponent(
+          message
+        );
+
+
+      window.location.href =
+        mailto;
+
+    },
+
+
+    // ========================================================
+    // DELETE ORDER
+    // ========================================================
+
+    async deleteOrder(id) {
+
+      const order =
+        this.orders.find(
+          item =>
+            String(
+              item.id
+            ) ===
+            String(
+              id
+            )
+        );
+
+
+      if (!order) {
+
+        alert(
+          "Order could not be found."
+        );
+
+        return;
+
+      }
+
+
+      const customerName =
+        order.customer_name ||
+        "this customer";
+
+
+      // ------------------------------------------------------
+      // FIRST CONFIRMATION
+      // ------------------------------------------------------
+
+      const confirmed =
+        confirm(
+
+          `Delete the order from "${customerName}"?\n\n` +
+
+          `Order ID: ${order.id}\n` +
+
+          `Total: ${this.money(
+            order.total
+          )}\n\n` +
+
+          `This action cannot be undone.`
+
+        );
+
+
+      if (!confirmed) {
+
+        return;
+
+      }
+
+
+      // ------------------------------------------------------
+      // SECOND CONFIRMATION
+      // ------------------------------------------------------
+
+      const finalConfirmed =
+        confirm(
+
+          "Are you absolutely sure you want to permanently remove this order?"
+
+        );
+
+
+      if (!finalConfirmed) {
+
+        return;
+
+      }
+
+
+      const list =
+        document.getElementById(
+          "orderList"
+        );
+
+
+      try {
+
+        // ----------------------------------------------------
+        // DISABLE ORDER LIST
+        // ----------------------------------------------------
+
+        if (list) {
+
+          list.style.pointerEvents =
+            "none";
+
+          list.style.opacity =
+            "0.6";
+
+        }
+
+
+        // ----------------------------------------------------
+        // DELETE FROM SUPABASE
+        // ----------------------------------------------------
+
+        const {
+          error
+        } =
+          await this.sb
+            .from(
+              "orders"
+            )
+            .delete()
+            .eq(
+              "id",
+              id
+            );
+
+
+        if (error) {
+
+          throw error;
+
+        }
+
+
+        // ----------------------------------------------------
+        // REMOVE LOCALLY
+        // ----------------------------------------------------
+
+        this.orders =
+          this.orders.filter(
+            item =>
+              String(
+                item.id
+              ) !==
+              String(
+                id
+              )
+          );
+
+
+        // ----------------------------------------------------
+        // UPDATE SCREEN
+        // ----------------------------------------------------
+
+        this.renderOrders();
+
+        this.renderStats();
+
+
+        alert(
+          "Order deleted successfully."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "DELETE ORDER:",
+          error
+        );
+
+
+        alert(
+          "Could not delete order:\n\n" +
+          error.message
+        );
+
+
+        // ----------------------------------------------------
+        // RELOAD ORDERS
+        // ----------------------------------------------------
+
+        try {
+
+          this.orders =
+            await this.getOrders();
+
+
+          this.renderOrders();
+
+          this.renderStats();
+
+
+        } catch (
+          refreshError
+        ) {
+
+          console.error(
+            "ORDER REFRESH ERROR:",
+            refreshError
+          );
+
+        }
+
+      } finally {
+
+        if (list) {
+
+          list.style.pointerEvents =
+            "";
+
+          list.style.opacity =
+            "";
+
+        }
+
+      }
+
+    },
+
+
+    // ========================================================
+    // REFRESH ORDERS ONLY
+    // ========================================================
+
+    async refreshOrders() {
+
+      const button =
+        document.getElementById(
+          "refreshOrders"
+        );
+
+
+      try {
+
+        if (button) {
+
+          button.disabled =
+            true;
+
+          button.textContent =
+            "Refreshing...";
+
+        }
+
+
+        this.orders =
+          await this.getOrders();
+
+
+        this.renderOrders();
+
+        this.renderStats();
+
+
+      } catch (error) {
+
+        console.error(
+          "REFRESH ORDERS:",
+          error
+        );
+
+
+        alert(
+          "Could not refresh orders:\n\n" +
+          error.message
+        );
+
+
+      } finally {
+
+        if (button) {
+
+          button.disabled =
+            false;
+
+          button.textContent =
+            "Refresh Orders";
+
+        }
 
       }
 
@@ -1670,14 +3398,24 @@
           "categoryForm"
         );
 
+
       if (!form) {
+
         return;
+
       }
+
 
       form.reset();
 
-      if (form.elements.id) {
-        form.elements.id.value = "";
+
+      if (
+        form.elements.id
+      ) {
+
+        form.elements.id.value =
+          "";
+
       }
 
     },
@@ -1694,26 +3432,54 @@
           "productForm"
         );
 
+
       if (!form) {
+
         return;
+
       }
+
 
       form.reset();
 
-      if (form.elements.id) {
-        form.elements.id.value = "";
+
+      if (
+        form.elements.id
+      ) {
+
+        form.elements.id.value =
+          "";
+
       }
 
-      if (form.elements.stock) {
-        form.elements.stock.value = 0;
+
+      if (
+        form.elements.stock
+      ) {
+
+        form.elements.stock.value =
+          0;
+
       }
 
-      if (form.elements.featured) {
-        form.elements.featured.checked = false;
+
+      if (
+        form.elements.featured
+      ) {
+
+        form.elements.featured.checked =
+          false;
+
       }
 
-      if (form.elements.colors) {
-        form.elements.colors.value = "";
+
+      if (
+        form.elements.colors
+      ) {
+
+        form.elements.colors.value =
+          "";
+
       }
 
     },
@@ -1726,39 +3492,58 @@
     showTab(id) {
 
       document
-        .querySelectorAll(".admin-tab")
-        .forEach(tab => {
+        .querySelectorAll(
+          ".admin-tab"
+        )
+        .forEach(
+          tab => {
 
-          tab.style.display = "none";
+            tab.style.display =
+              "none";
 
-        });
+          }
+        );
+
 
       const selected =
-        document.getElementById(id);
+        document.getElementById(
+          id
+        );
+
 
       if (selected) {
 
-        selected.style.display = "block";
+        selected.style.display =
+          "block";
 
       }
+
 
       document
         .querySelectorAll(
           ".admin-sidebar button"
         )
-        .forEach(button => {
+        .forEach(
+          button => {
 
-          button.classList.remove("active");
+            button.classList.remove(
+              "active"
+            );
 
-          if (
-            button.dataset.tab === id
-          ) {
 
-            button.classList.add("active");
+            if (
+              button.dataset.tab ===
+              id
+            ) {
+
+              button.classList.add(
+                "active"
+              );
+
+            }
 
           }
-
-        });
+        );
 
     },
 
@@ -1772,7 +3557,9 @@
       try {
 
         if (this.sb) {
+
           await this.sb.auth.signOut();
+
         }
 
       } catch (error) {
@@ -1793,7 +3580,10 @@
 
     slug(value) {
 
-      return String(value || "")
+      return String(
+        value ||
+        ""
+      )
         .toLowerCase()
         .trim()
         .replace(
@@ -1802,7 +3592,8 @@
         )
         .replace(
           /^-+|-+$/g,
-          "");
+          ""
+        );
 
     },
 
@@ -1814,17 +3605,31 @@
     money(value) {
 
       const number =
-        Number(value || 0);
+        Number(
+          value ||
+          0
+        );
+
 
       return new Intl.NumberFormat(
         "en-US",
         {
-          style: "currency",
-          currency: "USD",
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
+          style:
+            "currency",
+
+          currency:
+            "USD",
+
+          minimumFractionDigits:
+            2,
+
+          maximumFractionDigits:
+            2
         }
-      ).format(number) + " / dozen";
+      ).format(
+        number
+      ) +
+      " / dozen";
 
     },
 
@@ -1868,7 +3673,9 @@
 
     escapeAttr(value) {
 
-      return this.escape(value);
+      return this.escape(
+        value
+      );
 
     },
 
@@ -1881,11 +3688,17 @@
 
       const text =
         String(
-          name || "AMANI"
+          name ||
+          "AMIANI"
         )
-          .slice(0, 25);
+          .slice(
+            0,
+            25
+          );
+
 
       const svg = `
+
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="800"
@@ -1899,6 +3712,7 @@
             fill="#eeeeee"
           />
 
+
           <text
             x="400"
             y="300"
@@ -1908,15 +3722,23 @@
             font-size="40"
             fill="#777"
           >
-            ${this.escape(text)}
+
+            ${this.escape(
+              text
+            )}
+
           </text>
 
         </svg>
+
       `;
+
 
       return (
         "data:image/svg+xml;charset=UTF-8," +
-        encodeURIComponent(svg)
+        encodeURIComponent(
+          svg
+        )
       );
 
     },
@@ -1937,14 +3759,26 @@
           elementId
         );
 
+
       if (!element) {
+
         return;
+
       }
 
+
       element.innerHTML = `
-        <div class="notice ${this.escape(type)}">
-          ${this.escape(text)}
+
+        <div
+          class="notice ${this.escape(type)}"
+        >
+
+          ${this.escape(
+            text
+          )}
+
         </div>
+
       `;
 
     }
@@ -1956,7 +3790,8 @@
   // MAKE GLOBAL
   // ==========================================================
 
-  window.ADMIN = ADMIN;
+  window.ADMIN =
+    ADMIN;
 
 
   // ==========================================================
@@ -1967,12 +3802,21 @@
     "DOMContentLoaded",
     () => {
 
+
+      // ======================================================
+      // START ADMIN
+      // ======================================================
+
       const start = () => {
+
         ADMIN.init();
+
       };
+
 
       if (
         window.AMANI_SUPABASE ||
+
         (
           window.supabase &&
           window.AMANI_SUPABASE_URL &&
@@ -2001,6 +3845,7 @@
           "loginForm"
         );
 
+
       if (loginForm) {
 
         loginForm.addEventListener(
@@ -2009,30 +3854,46 @@
 
             event.preventDefault();
 
+
             const button =
               document.getElementById(
                 "loginButton"
               );
 
+
             try {
 
-              button.disabled = true;
+              button.disabled =
+                true;
+
 
               button.textContent =
                 "Logging in...";
 
+
               const data =
-                new FormData(loginForm);
+                new FormData(
+                  loginForm
+                );
+
 
               const email =
                 String(
-                  data.get("email") || ""
+                  data.get(
+                    "email"
+                  ) ||
+                  ""
                 ).trim();
+
 
               const password =
                 String(
-                  data.get("password") || ""
+                  data.get(
+                    "password"
+                  ) ||
+                  ""
                 );
+
 
               if (
                 !email ||
@@ -2045,6 +3906,7 @@
 
               }
 
+
               if (!ADMIN.sb) {
 
                 throw new Error(
@@ -2052,6 +3914,7 @@
                 );
 
               }
+
 
               const {
                 error
@@ -2062,11 +3925,16 @@
                     password
                   });
 
+
               if (error) {
+
                 throw error;
+
               }
 
+
               loginForm.reset();
+
 
             } catch (error) {
 
@@ -2075,15 +3943,19 @@
                 error
               );
 
+
               ADMIN.message(
                 "loginMessage",
                 error.message,
                 "error"
               );
 
+
             } finally {
 
-              button.disabled = false;
+              button.disabled =
+                false;
+
 
               button.textContent =
                 "Login";
@@ -2105,11 +3977,13 @@
           "logout"
         );
 
+
       if (logout) {
 
         logout.addEventListener(
           "click",
-          () => ADMIN.logout()
+          () =>
+            ADMIN.logout()
         );
 
       }
@@ -2124,12 +3998,15 @@
           "categoryForm"
         );
 
+
       if (categoryForm) {
 
         categoryForm.addEventListener(
           "submit",
           event =>
-            ADMIN.saveCategory(event)
+            ADMIN.saveCategory(
+              event
+            )
         );
 
       }
@@ -2144,25 +4021,29 @@
           "productForm"
         );
 
+
       if (productForm) {
 
         productForm.addEventListener(
           "submit",
           event =>
-            ADMIN.saveProduct(event)
+            ADMIN.saveProduct(
+              event
+            )
         );
 
       }
 
 
       // ======================================================
-      // CLEAR BUTTONS
+      // CLEAR CATEGORY
       // ======================================================
 
       const clearCategory =
         document.getElementById(
           "clearCategory"
         );
+
 
       if (clearCategory) {
 
@@ -2174,10 +4055,16 @@
 
       }
 
+
+      // ======================================================
+      // CLEAR PRODUCT
+      // ======================================================
+
       const clearProduct =
         document.getElementById(
           "clearProduct"
         );
+
 
       if (clearProduct) {
 
@@ -2191,6 +4078,27 @@
 
 
       // ======================================================
+      // REFRESH ORDERS
+      // ======================================================
+
+      const refreshOrders =
+        document.getElementById(
+          "refreshOrders"
+        );
+
+
+      if (refreshOrders) {
+
+        refreshOrders.addEventListener(
+          "click",
+          () =>
+            ADMIN.refreshOrders()
+        );
+
+      }
+
+
+      // ======================================================
       // SIDEBAR
       // ======================================================
 
@@ -2198,20 +4106,22 @@
         .querySelectorAll(
           ".admin-sidebar button[data-tab]"
         )
-        .forEach(button => {
+        .forEach(
+          button => {
 
-          button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+              "click",
+              () => {
 
-              ADMIN.showTab(
-                button.dataset.tab
-              );
+                ADMIN.showTab(
+                  button.dataset.tab
+                );
 
-            }
-          );
+              }
+            );
 
-        });
+          }
+        );
 
     }
   );
