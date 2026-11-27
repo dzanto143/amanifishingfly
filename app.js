@@ -15,8 +15,13 @@
 //   Same product with different size/color = separate line
 //
 // RELATED PRODUCTS:
-//   Products from the same category are automatically shown
+//   ALL products from the same category are shown
 //   underneath the current product.
+//
+// Example:
+//   If viewing an Adams fly:
+//   All other products in the Adams category
+//   will appear underneath.
 // ============================================================
 
 
@@ -2476,8 +2481,7 @@ async function loadShop() {
 //
 // IMPORTANT:
 //
-// This function finds ALL products that have the same
-// category_id as the product currently being viewed.
+// Finds ALL products with the SAME category_id.
 //
 // Example:
 //
@@ -2495,7 +2499,7 @@ async function loadShop() {
 // Adams Variant
 // etc.
 //
-// The current product is excluded.
+// The CURRENT product is excluded.
 // ============================================================
 
 async function loadRelatedProducts(
@@ -2545,12 +2549,6 @@ async function loadRelatedProducts(
 
     // ========================================================
     // GET CATEGORY ID
-    //
-    // Primary:
-    // currentProduct.category_id
-    //
-    // Fallback:
-    // currentProduct.categories.id
     // ========================================================
 
     const categoryId =
@@ -2584,7 +2582,12 @@ async function loadRelatedProducts(
     // ========================================================
     // FIND ALL PRODUCTS FROM SAME CATEGORY
     //
-    // CURRENT PRODUCT IS EXCLUDED.
+    // IMPORTANT FIX:
+    //
+    // Do NOT create another variable called
+    // "currentProduct" inside the filter.
+    //
+    // We use "isCurrentProduct" instead.
     // ========================================================
 
     const relatedProducts =
@@ -2606,7 +2609,7 @@ async function loadRelatedProducts(
             );
 
 
-          const currentProduct =
+          const isCurrentProduct =
             String(
               item.id
             ) ===
@@ -2617,7 +2620,7 @@ async function loadRelatedProducts(
 
           return (
             sameCategory &&
-            !currentProduct
+            !isCurrentProduct
           );
 
         }
@@ -2666,7 +2669,7 @@ async function loadRelatedProducts(
     if (description) {
 
       description.textContent =
-        `Explore more flies from the ${categoryName} collection.`;
+        `Explore all other flies from the ${categoryName} collection.`;
 
     }
 
@@ -2674,9 +2677,12 @@ async function loadRelatedProducts(
     // ========================================================
     // RENDER ALL RELATED PRODUCTS
     //
-    // NO .slice(0, 8)
+    // IMPORTANT:
     //
-    // Therefore ALL products in the same category appear.
+    // NO slice()
+    //
+    // Therefore every product in the same category
+    // will appear.
     // ========================================================
 
     grid.innerHTML =
@@ -3633,9 +3639,10 @@ async function loadProductPage() {
     // ========================================================
     // LOAD RELATED PRODUCTS
     //
-    // THIS MUST RUN AFTER THE CURRENT PRODUCT HAS LOADED.
+    // This runs after the main product has loaded.
     //
-    // It finds all other products with the same category_id.
+    // ALL products in the same category are displayed.
+    // The current product is excluded.
     // ========================================================
 
     await loadRelatedProducts(
