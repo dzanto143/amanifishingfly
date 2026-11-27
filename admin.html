@@ -885,33 +885,71 @@
 
 
 
-      <!-- ===================================================
-           ORDERS
-      ==================================================== -->
+     ```html
+<!-- ===================================================
+     ORDERS
+==================================================== -->
 
-      <div
-        id="orders"
-        class="admin-tab"
-        style="display:none;"
-      >
+<div
+  id="orders"
+  class="admin-tab"
+  style="display:none;"
+>
 
-        <div class="admin-panel">
+  <div class="admin-panel">
 
-          <h2>
-            Orders
-          </h2>
+    <div
+      style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:15px;
+        flex-wrap:wrap;
+        margin-bottom:20px;
+      "
+    >
 
+      <div>
 
-          <div
-            id="orderList"
-            class="admin-list"
-          >
-            Loading orders...
-          </div>
+        <h2 style="margin-bottom:5px;">
+          Customer Orders
+        </h2>
 
-        </div>
+        <p
+          style="
+            color:#777;
+            margin:0;
+          "
+        >
+          View orders, contact customers and remove completed or unwanted orders.
+        </p>
 
       </div>
+
+      <button
+        type="button"
+        class="btn btn-light"
+        id="refreshOrders"
+      >
+        Refresh Orders
+      </button>
+
+    </div>
+
+
+    <!-- ORDER LIST -->
+
+    <div
+      id="orderList"
+      class="admin-list"
+    >
+      Loading orders...
+    </div>
+
+  </div>
+
+</div>
+```
 
 
     </section>
