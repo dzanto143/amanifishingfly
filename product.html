@@ -1,4 +1,3 @@
-```html
 <!doctype html>
 <html lang="en">
 
@@ -35,13 +34,20 @@
         href="style.css"
     >
 
-    <!-- Supabase -->
+    <!-- =====================================================
+         SUPABASE
+    ====================================================== -->
+
     <script
         src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
         defer
     ></script>
 
-    <!-- Supabase configuration -->
+
+    <!-- =====================================================
+         SUPABASE CONFIGURATION
+    ====================================================== -->
+
     <script
         src="supabase-config.js"
         defer
@@ -52,6 +58,7 @@
 
 <body>
 
+
     <!-- =====================================================
          HEADER
     ====================================================== -->
@@ -59,15 +66,20 @@
     <div id="site-header"></div>
 
 
+
     <!-- =====================================================
-         PRODUCT
+         PRODUCT DETAILS
     ====================================================== -->
 
     <main class="section">
 
         <div class="container">
 
-            <!-- Breadcrumb -->
+
+            <!-- =================================================
+                 BREADCRUMB
+            ================================================== -->
+
             <div class="breadcrumb">
 
                 <a href="shop.html">
@@ -85,21 +97,103 @@
             </div>
 
 
-            <!-- Product details are loaded by app.js -->
+
+            <!-- =================================================
+                 PRODUCT DETAILS
+            ================================================== -->
+
             <div
                 id="productDetail"
                 class="product-detail"
             >
 
                 <div class="notice">
+
                     Loading product...
+
                 </div>
 
             </div>
 
+
         </div>
 
     </main>
+
+
+
+    <!-- =====================================================
+         RELATED / SUGGESTED PRODUCTS
+         
+         Example:
+         
+         Current product:
+         Adams
+         
+         Below:
+         More Adams Flies
+         
+         - Parachute Adams
+         - CDC Adams
+         - Adams Irresistible
+         - Adams Dry
+         - etc.
+         
+         app.js automatically fills this section.
+    ====================================================== -->
+
+    <section
+        id="relatedProducts"
+        class="section"
+        style="display: none;"
+    >
+
+        <div class="container">
+
+
+            <!-- =================================================
+                 SECTION HEADER
+            ================================================== -->
+
+            <div class="section-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        MORE FROM THIS COLLECTION
+                    </div>
+
+
+                    <h2 id="relatedProductsTitle">
+                        More Flies
+                    </h2>
+
+
+                    <p
+                        id="relatedProductsDescription"
+                        class="muted"
+                    ></p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 RELATED PRODUCTS GRID
+            ================================================== -->
+
+            <div
+                id="relatedProductsGrid"
+                class="grid grid-4"
+            ></div>
+
+
+        </div>
+
+    </section>
+
 
 
     <!-- =====================================================
@@ -107,6 +201,7 @@
     ====================================================== -->
 
     <div id="site-footer"></div>
+
 
 
     <!-- =====================================================
@@ -118,7 +213,7 @@
         defer
     ></script>
 
+
 </body>
 
 </html>
-```
