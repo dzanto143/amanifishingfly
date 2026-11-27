@@ -1,812 +1,924 @@
 // ============================================================
 // AMIANI'S FLY WHOLESALERS
-// MAIN WEBSITE APP
+// STOREFRONT APP
+//
+// PRICING:
+//   USD PER DOZEN
+//
+// STOCK:
+//   NUMBER OF DOZENS
+//
+// VARIANTS:
+//   SIZE + COLOR
+//
+// CART:
+//   Same product with different size/color = separate line
 // ============================================================
 
-(function () {
+const AMIANI = {
 
-  "use strict";
+  // ==========================================================
+  // SUPABASE
+  // ==========================================================
 
+  sb: window.AMANI_SUPABASE,
 
-  // ============================================================
-  // CONFIGURATION
-  // ============================================================
-
-  const AMIANI = {
-
-    sb: window.AMANI_SUPABASE || null,
-
-    brandName: "Amiani's Fly Wholesalers",
-
-    currency: "USD",
-
-    currencySymbol: "$"
-
-  };
+  brandName: "Amiani's Fly Wholesalers",
 
 
-  // ============================================================
-  // BASIC HELPERS
-  // ============================================================
+  // ==========================================================
+  // MONEY
+  // ==========================================================
 
-  function money(value) {
+  money(value) {
 
-    const number = Number(value || 0);
+    const amount = Number(value || 0);
 
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(number);
+    }).format(amount);
 
-  }
-
-
-  function moneyPerDozen(value) {
-
-    return `${money(value)} / dozen`;
-
-  }
+  },
 
 
-  function esc(value) {
+  moneyPerDozen(value) {
 
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+    return `${this.money(value)} / dozen`;
 
-  }
+  },
 
 
-  function escAttr(value) {
+  // ==========================================================
+  // ESCAPE HTML
+  // ==========================================================
 
-    return esc(value);
+  esc(value = "") {
 
-  }
-
-
-  function slug(value) {
-
-    return String(value || "")
-
-      .toLowerCase()
-
-      .trim()
-
-      .replace(/[^a-z0-9]+/g, "-")
-
-      .replace(/^-+|-+$/g, "");
-
-  }
-
-
-  function placeholder(text = "No image") {
-
-    return (
-      "data:image/svg+xml;charset=UTF-8," +
-      encodeURIComponent(`
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="800"
-          height="600"
-          viewBox="0 0 800 600"
-        >
-          <rect
-            width="800"
-            height="600"
-            fill="#f1f3ef"
-          />
-
-          <text
-            x="400"
-            y="300"
-            text-anchor="middle"
-            dominant-baseline="middle"
-            font-family="Arial"
-            font-size="32"
-            fill="#6d7c77"
-          >
-            ${text}
-          </text>
-        </svg>
-      `)
+    return String(value).replace(
+      /[&<>"']/g,
+      character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[character])
     );
 
-  }
+  },
 
 
-  // ============================================================
-  // SUPABASE CHECK
-  // ============================================================
+  // ==========================================================
+  // ESCAPE ATTRIBUTE
+  // ==========================================================
 
-  function checkSupabase() {
+  escAttr(value = "") {
 
-    if (!AMIANI.sb) {
+    return this.esc(value);
+
+  },
+
+
+  // ==========================================================
+  // SLUG
+  // ==========================================================
+
+  slug(value = "") {
+
+    return String(value)
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  },
+
+
+  // ==========================================================
+  // PLACEHOLDER
+  // ==========================================================
+
+  placeholder(
+    text = "Amiani's Fly Wholesalers"
+  ) {
+
+    return (
+      "https://placehold.co/900x700/eef3f0/0c4a3c?text=" +
+      encodeURIComponent(text)
+    );
+
+  },
+
+
+  // ==========================================================
+  // DATABASE - CATEGORIES
+  // ==========================================================
+
+  async categories() {
+
+    if (!this.sb) {
+      throw new Error(
+        "Supabase is not configured."
+      );
+    }
+
+    const {
+      data,
+      error
+    } = await this.sb
+      .from("categories")
+      .select("*")
+      .order("name", {
+        ascending: true
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+
+  },
+
+
+  // ==========================================================
+  // DATABASE - PRODUCTS
+  // ==========================================================
+
+  async products() {
+
+    if (!this.sb) {
+      throw new Error(
+        "Supabase is not configured."
+      );
+    }
+
+    const {
+      data,
+      error
+    } = await this.sb
+      .from("products")
+      .select("*,categories(id,name,slug)")
+      .order("created_at", {
+        ascending: false
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+
+  },
+
+
+  // ==========================================================
+  // DATABASE - SINGLE PRODUCT
+  // ==========================================================
+
+  async product(id) {
+
+    if (!this.sb) {
+      throw new Error(
+        "Supabase is not configured."
+      );
+    }
+
+    if (!id) {
+      throw new Error(
+        "Product ID is missing."
+      );
+    }
+
+    const {
+      data,
+      error
+    } = await this.sb
+      .from("products")
+      .select("*,categories(id,name,slug)")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+
+  },
+
+
+  // ==========================================================
+  // DATABASE - SINGLE CATEGORY
+  // ==========================================================
+
+  async category(slug) {
+
+    if (!this.sb) {
+      throw new Error(
+        "Supabase is not configured."
+      );
+    }
+
+    if (!slug) {
+      throw new Error(
+        "Category slug is missing."
+      );
+    }
+
+    const {
+      data,
+      error
+    } = await this.sb
+      .from("categories")
+      .select("*")
+      .eq("slug", slug)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+
+  },
+
+
+  // ==========================================================
+  // PARSE SIZES / COLORS
+  //
+  // Supports:
+  // #10, #12, #14
+  //
+  // Also supports newline-separated values.
+  // ==========================================================
+
+  parseOptions(value) {
+
+    return String(value || "")
+      .replace(/\r/g, "")
+      .split(/[,\n]+/)
+      .map(item => item.trim())
+      .filter(Boolean);
+
+  },
+
+
+  // ==========================================================
+  // CART
+  // ==========================================================
+
+  cart() {
+
+    try {
+
+      const stored =
+        localStorage.getItem(
+          "amani_cart"
+        );
+
+      if (!stored) {
+        return [];
+      }
+
+      const parsed =
+        JSON.parse(stored);
+
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed.map(item => ({
+        ...item,
+
+        qty: Math.max(
+          1,
+          Math.floor(
+            Number(item.qty || 1)
+          )
+        ),
+
+        price: Number(
+          item.price || 0
+        ),
+
+        size:
+          String(
+            item.size || ""
+          ).trim(),
+
+        color:
+          String(
+            item.color || ""
+          ).trim()
+
+      }));
+
+    } catch (error) {
 
       console.error(
-        "Amiani Supabase client is not available."
+        "Could not read cart:",
+        error
+      );
+
+      return [];
+
+    }
+
+  },
+
+
+  // ==========================================================
+  // SAVE CART
+  // ==========================================================
+
+  saveCart(cart) {
+
+    localStorage.setItem(
+      "amani_cart",
+      JSON.stringify(cart)
+    );
+
+    this.updateCartCount();
+
+  },
+
+
+  // ==========================================================
+  // CART COUNT
+  //
+  // Quantity = number of dozens
+  // ==========================================================
+
+  updateCartCount() {
+
+    const quantity =
+      this.cart().reduce(
+        (total, item) =>
+          total +
+          Number(item.qty || 0),
+        0
+      );
+
+
+    document
+      .querySelectorAll(
+        "[data-cart-count]"
+      )
+      .forEach(element => {
+
+        element.textContent =
+          quantity;
+
+        element.setAttribute(
+          "aria-label",
+          `${quantity} dozen in cart`
+        );
+
+      });
+
+  },
+
+
+  // ==========================================================
+  // CREATE UNIQUE CART LINE
+  //
+  // Same product:
+  //
+  // Adams / #12 / Olive
+  //
+  // is different from:
+  //
+  // Adams / #14 / Brown
+  // ==========================================================
+
+  cartLineKey(
+    productId,
+    size = "",
+    color = ""
+  ) {
+
+    return [
+      String(productId || ""),
+      String(size || "")
+        .trim()
+        .toLowerCase(),
+      String(color || "")
+        .trim()
+        .toLowerCase()
+    ].join("|");
+
+  },
+
+
+  // ==========================================================
+  // ADD TO CART
+  // ==========================================================
+
+  addCart(
+    product,
+    quantity = 1,
+    selectedSize = "",
+    selectedColor = ""
+  ) {
+
+    if (!product || !product.id) {
+
+      alert(
+        "This product could not be added to the cart."
       );
 
       return false;
 
     }
 
-    return true;
 
-  }
-
-
-  // ============================================================
-  // CATEGORIES
-  // ============================================================
-
-  async function categories() {
-
-    if (!checkSupabase()) {
-
-      throw new Error(
-        "Supabase is not connected."
-      );
-
-    }
-
-
-    const {
-      data,
-      error
-    } = await AMIANI.sb
-
-      .from("categories")
-
-      .select("*")
-
-      .order("name", {
-        ascending: true
-      });
-
-
-    if (error) {
-
-      console.error(
-        "Categories error:",
-        error
-      );
-
-      throw error;
-
-    }
-
-
-    return data || [];
-
-  }
-
-
-  // ============================================================
-  // ALL PRODUCTS
-  // ============================================================
-
-  async function products() {
-
-    if (!checkSupabase()) {
-
-      throw new Error(
-        "Supabase is not connected."
-      );
-
-    }
-
-
-    const {
-      data,
-      error
-    } = await AMIANI.sb
-
-      .from("products")
-
-      .select(`
-        *,
-        categories(
-          id,
-          name,
-          slug
-        )
-      `)
-
-      .order("created_at", {
-        ascending: false
-      });
-
-
-    if (error) {
-
-      console.error(
-        "Products error:",
-        error
-      );
-
-      throw error;
-
-    }
-
-
-    return data || [];
-
-  }
-
-
-  // ============================================================
-  // SINGLE PRODUCT
-  // ============================================================
-
-  async function product(id) {
-
-    if (!checkSupabase()) {
-
-      throw new Error(
-        "Supabase is not connected."
-      );
-
-    }
-
-
-    if (!id) {
-
-      throw new Error(
-        "Product ID is missing."
-      );
-
-    }
-
-
-    const {
-      data,
-      error
-    } = await AMIANI.sb
-
-      .from("products")
-
-      .select(`
-        *,
-        categories(
-          id,
-          name,
-          slug
-        )
-      `)
-
-      .eq("id", id)
-
-      .maybeSingle();
-
-
-    if (error) {
-
-      console.error(
-        "Product error:",
-        error
-      );
-
-      throw error;
-
-    }
-
-
-    if (!data) {
-
-      throw new Error(
-        "Product not found."
-      );
-
-    }
-
-
-    return data;
-
-  }
-
-
-  // ============================================================
-  // SINGLE CATEGORY
-  // ============================================================
-
-  async function category(categorySlug) {
-
-    if (!checkSupabase()) {
-
-      throw new Error(
-        "Supabase is not connected."
-      );
-
-    }
-
-
-    const {
-      data,
-      error
-    } = await AMIANI.sb
-
-      .from("categories")
-
-      .select("*")
-
-      .eq("slug", categorySlug)
-
-      .maybeSingle();
-
-
-    if (error) {
-
-      console.error(
-        "Category error:",
-        error
-      );
-
-      throw error;
-
-    }
-
-
-    return data;
-
-  }
-
-
-  // ============================================================
-  // PARSE OPTIONS
-  //
-  // Supports:
-  // Adams
-  // Parachute Adams
-  // CDC Adams
-  //
-  // or:
-  // 10, 12, 14, 16
-  //
-  // or one per line
-  // ============================================================
-
-  function parseOptions(value) {
-
-    if (!value) {
-
-      return [];
-
-    }
-
-
-    return String(value)
-
-      .split(/[\n,]+/)
-
-      .map(item => item.trim())
-
-      .filter(Boolean);
-
-  }
-
-
-  // ============================================================
-  // CART
-  // ============================================================
-
-  function cart() {
-
-    try {
-
-      const raw =
-        localStorage.getItem("amani_cart");
-
-      if (!raw) {
-
-        return [];
-
-      }
-
-
-      const parsed =
-        JSON.parse(raw);
-
-
-      return Array.isArray(parsed)
-        ? parsed
-        : [];
-
-    } catch (error) {
-
-      console.error(
-        "Cart read error:",
-        error
-      );
-
-      return [];
-
-    }
-
-  }
-
-
-  function saveCart(items) {
-
-    localStorage.setItem(
-      "amani_cart",
-      JSON.stringify(items)
+    quantity = Math.max(
+      1,
+      Math.floor(
+        Number(quantity) || 1
+      )
     );
 
-
-    updateCartCount();
-
-  }
-
-
-  function updateCartCount() {
-
-    const items = cart();
-
-    const count = items.reduce(
-      (total, item) => {
-
-        return total + Number(
-          item.qty || 0
-        );
-
-      },
-      0
-    );
-
-
-    document
-      .querySelectorAll(".cart-count")
-      .forEach(element => {
-
-        element.textContent = count;
-
-      });
-
-  }
-
-
-  // ============================================================
-  // CART LINE KEY
-  //
-  // Same product with different size/color
-  // becomes a different cart line.
-  // ============================================================
-
-  function cartLineKey(
-    productId,
-    size,
-    color
-  ) {
-
-    return [
-      productId || "",
-      size || "",
-      color || ""
-    ].join("::");
-
-  }
-
-
-  // ============================================================
-  // ADD TO CART
-  // ============================================================
-
-  function addCart(productData, options = {}) {
 
     const size =
-      options.size ||
-      "";
+      String(
+        selectedSize || ""
+      ).trim();
+
 
     const color =
-      options.color ||
-      "";
+      String(
+        selectedColor || ""
+      ).trim();
 
-    const qty =
-      Math.max(
-        1,
-        Number(options.qty || 1)
+
+    // ========================================================
+    // AVAILABLE OPTIONS
+    // ========================================================
+
+    const availableSizes =
+      this.parseOptions(
+        product.sizes
       );
 
 
-    const sizes =
-      parseOptions(
-        productData.sizes
-      );
-
-    const colors =
-      parseOptions(
-        productData.colors
+    const availableColors =
+      this.parseOptions(
+        product.colors
       );
 
 
-    // ----------------------------------------------------------
-    // Validate size
-    // ----------------------------------------------------------
+    // ========================================================
+    // REQUIRED SIZE
+    // ========================================================
 
     if (
-      sizes.length &&
-      !sizes.includes(size)
+      availableSizes.length &&
+      !size
     ) {
 
-      throw new Error(
-        "Please select a size."
+      alert(
+        "Please select a size before adding this fly to your cart."
       );
+
+      return false;
 
     }
 
 
-    // ----------------------------------------------------------
-    // Validate color
-    // ----------------------------------------------------------
+    // ========================================================
+    // REQUIRED COLOR
+    // ========================================================
 
     if (
-      colors.length &&
-      !colors.includes(color)
+      availableColors.length &&
+      !color
     ) {
 
-      throw new Error(
-        "Please select a color."
+      alert(
+        "Please select a color before adding this fly to your cart."
       );
+
+      return false;
 
     }
 
+
+    // ========================================================
+    // VALIDATE SIZE
+    // ========================================================
+
+    if (
+      size &&
+      availableSizes.length &&
+      !availableSizes.some(
+        value =>
+          value.toLowerCase() ===
+          size.toLowerCase()
+      )
+    ) {
+
+      alert(
+        "The selected size is not available for this product."
+      );
+
+      return false;
+
+    }
+
+
+    // ========================================================
+    // VALIDATE COLOR
+    // ========================================================
+
+    if (
+      color &&
+      availableColors.length &&
+      !availableColors.some(
+        value =>
+          value.toLowerCase() ===
+          color.toLowerCase()
+      )
+    ) {
+
+      alert(
+        "The selected color is not available for this product."
+      );
+
+      return false;
+
+    }
+
+
+    // ========================================================
+    // STOCK
+    // ========================================================
 
     const stock =
-      Number(productData.stock || 0);
+      Number(
+        product.stock || 0
+      );
 
 
     if (stock <= 0) {
 
-      throw new Error(
+      alert(
         "This product is currently out of stock."
       );
+
+      return false;
 
     }
 
 
-    const items = cart();
+    const cart =
+      this.cart();
 
 
-    const key =
-      cartLineKey(
-        productData.id,
-        size,
-        color
-      );
+    // ========================================================
+    // TOTAL PRODUCT QUANTITY ALREADY IN CART
+    //
+    // Stock belongs to the product, not the individual
+    // variant, so different variants share the same stock.
+    // ========================================================
 
-
-    // ----------------------------------------------------------
-    // Total quantity already in cart for this product
-    // ----------------------------------------------------------
-
-    const existingProductQty =
-      items
-
-        .filter(item =>
-          String(item.product_id) ===
-          String(productData.id)
+    const existingProductQuantity =
+      cart
+        .filter(
+          item =>
+            String(item.id) ===
+            String(product.id)
         )
-
         .reduce(
-          (sum, item) =>
-            sum + Number(item.qty || 0),
+          (
+            total,
+            item
+          ) =>
+            total +
+            Number(item.qty || 0),
           0
         );
 
 
     if (
-      existingProductQty + qty >
+      existingProductQuantity +
+      quantity >
       stock
     ) {
 
-      throw new Error(
-        `Only ${stock} dozen${
-          stock === 1 ? "" : "s"
-        } available.`
+      const remaining =
+        Math.max(
+          0,
+          stock -
+          existingProductQuantity
+        );
+
+
+      alert(
+        remaining > 0
+          ? `Only ${remaining} dozen(s) of ${product.name} remain available for your cart.`
+          : `You already have all available stock of ${product.name} in your cart.`
       );
+
+      return false;
 
     }
 
 
-    const existingIndex =
-      items.findIndex(
-        item =>
-          item.key === key
+    // ========================================================
+    // FIND EXACT VARIANT
+    // ========================================================
+
+    const lineKey =
+      this.cartLineKey(
+        product.id,
+        size,
+        color
       );
 
 
-    if (existingIndex >= 0) {
+    const existing =
+      cart.find(
+        item =>
+          this.cartLineKey(
+            item.id,
+            item.size,
+            item.color
+          ) ===
+          lineKey
+      );
 
-      items[existingIndex].qty += qty;
 
-    } else {
+    // ========================================================
+    // EXISTING VARIANT
+    // ========================================================
 
-      items.push({
+    if (existing) {
 
-        key,
+      existing.qty =
+        Number(existing.qty || 0) +
+        quantity;
 
-        product_id:
-          productData.id,
+    }
+
+
+    // ========================================================
+    // NEW VARIANT
+    // ========================================================
+
+    else {
+
+      cart.push({
+
+        id:
+          product.id,
 
         name:
-          productData.name,
+          product.name,
 
         price:
-          Number(productData.price || 0),
+          Number(
+            product.price || 0
+          ),
 
         image_url:
-          productData.image_url || "",
+          product.image_url || "",
 
         category_id:
-          productData.category_id || "",
+          product.category_id || null,
 
-        category_name:
-          productData.categories?.name || "",
+        qty:
+          quantity,
 
-        size,
+        size:
+          size,
 
-        color,
-
-        qty
+        color:
+          color
 
       });
 
     }
 
 
-    saveCart(items);
+    this.saveCart(
+      cart
+    );
+
+
+    // ========================================================
+    // SUCCESS MESSAGE
+    // ========================================================
+
+    let message =
+      `${product.name} added to your cart.\n\n` +
+      `Quantity: ${quantity} dozen\n` +
+      `Price: ${this.moneyPerDozen(
+        product.price
+      )}`;
+
+
+    if (size) {
+
+      message +=
+        `\nSize: ${size}`;
+
+    }
+
+
+    if (color) {
+
+      message +=
+        `\nColor: ${color}`;
+
+    }
+
+
+    alert(
+      message
+    );
 
 
     return true;
 
-  }
+  },
 
 
-  // ============================================================
-  // REMOVE CART ITEM
-  // ============================================================
+  // ==========================================================
+  // REMOVE CART ITEM BY PRODUCT ID
+  //
+  // Kept for compatibility.
+  // ==========================================================
 
-  function removeCartItem(key) {
+  removeCart(id) {
 
-    const items =
-      cart().filter(
+    const cart =
+      this.cart().filter(
         item =>
-          item.key !== key
+          String(item.id) !==
+          String(id)
       );
 
-
-    saveCart(items);
-
-    return items;
-
-  }
-
-
-  // ============================================================
-  // REMOVE PRODUCT COMPLETELY
-  // ============================================================
-
-  function removeCart(productId) {
-
-    const items =
-      cart().filter(
-        item =>
-          String(item.product_id) !==
-          String(productId)
-      );
-
-
-    saveCart(items);
-
-    return items;
-
-  }
-
-
-  // ============================================================
-  // CART TOTAL
-  // ============================================================
-
-  function total() {
-
-    return cart().reduce(
-      (sum, item) => {
-
-        return sum +
-          (
-            Number(item.price || 0) *
-            Number(item.qty || 0)
-          );
-
-      },
-      0
+    this.saveCart(
+      cart
     );
 
-  }
+  },
 
 
-  // ============================================================
-  // HEADER
-  // ============================================================
+  // ==========================================================
+  // REMOVE EXACT CART LINE BY INDEX
+  // ==========================================================
 
-  function renderHeader() {
+  removeCartItem(index) {
 
-    const header =
-      document.querySelector(
-        "#site-header"
-      );
+    const cart =
+      this.cart();
 
 
-    if (!header) {
+    if (
+      index < 0 ||
+      index >= cart.length
+    ) {
 
       return;
 
     }
 
 
-    header.innerHTML = `
+    cart.splice(
+      index,
+      1
+    );
+
+
+    this.saveCart(
+      cart
+    );
+
+  },
+
+
+  // ==========================================================
+  // CART TOTAL
+  // ==========================================================
+
+  total() {
+
+    return this.cart().reduce(
+      (
+        total,
+        item
+      ) =>
+        total +
+        Number(
+          item.price || 0
+        ) *
+        Number(
+          item.qty || 0
+        ),
+      0
+    );
+
+  },
+
+
+  // ==========================================================
+  // HEADER
+  // ==========================================================
+
+  async renderHeader() {
+
+    const element =
+      document.querySelector(
+        "#site-header"
+      );
+
+
+    if (!element) {
+      return;
+    }
+
+
+    element.innerHTML = `
 
       <header class="site-header">
 
-        <div class="container">
+        <div class="container nav">
 
-          <div class="header-inner">
+          <a
+            class="logo"
+            href="index.html"
+            aria-label="Amiani's Fly Wholesalers Home"
+          >
 
-            <a
-              href="index.html"
-              class="logo"
-            >
+            AMIANI'S
 
-              <span class="logo-main">
-                AMIANI'S
-              </span>
+            <span>
+              FLY WHOLESALERS
+            </span>
 
-              <span class="logo-sub">
-                FLY WHOLESALERS
-              </span>
+          </a>
 
+
+          <nav
+            class="nav-links"
+            id="mainNav"
+            aria-label="Main navigation"
+          >
+
+            <a href="index.html">
+              Home
             </a>
 
+            <a href="shop.html">
+              Shop
+            </a>
 
-            <nav class="main-nav">
+            <a href="about.html">
+              About
+            </a>
 
-              <a href="index.html">
-                Home
-              </a>
+            <a href="contact.html">
+              Contact
+            </a>
 
-              <a href="shop.html">
-                Shop
-              </a>
+          </nav>
 
-              <button
-                type="button"
-                class="cart-button"
-                id="openCartButton"
-              >
 
-                Cart
+          <div class="nav-actions">
 
-                <span class="cart-count">
-                  0
-                </span>
+            <button
+              class="btn btn-light"
+              id="openCart"
+              type="button"
+            >
 
-              </button>
+              Cart
+              (
+              <span data-cart-count>
+                0
+              </span>
+              dozen
+              )
 
-            </nav>
+            </button>
 
 
             <button
+              class="menu-btn"
+              id="menuBtn"
               type="button"
-              class="mobile-menu-button"
-              id="mobileMenuButton"
-              aria-label="Open menu"
+              aria-label="Open navigation menu"
+              aria-expanded="false"
             >
+
               ☰
+
             </button>
 
           </div>
@@ -818,149 +930,227 @@
     `;
 
 
-    updateCartCount();
+    // ========================================================
+    // MOBILE MENU
+    // ========================================================
 
-
-    const mobileButton =
+    const menuButton =
       document.querySelector(
-        "#mobileMenuButton"
+        "#menuBtn"
       );
 
 
-    if (mobileButton) {
-
-      mobileButton.addEventListener(
-        "click",
-        () => {
-
-          const nav =
-            document.querySelector(
-              ".main-nav"
-            );
-
-
-          if (nav) {
-
-            nav.classList.toggle(
-              "mobile-open"
-            );
-
-          }
-
-        }
+    const navigation =
+      document.querySelector(
+        "#mainNav"
       );
+
+
+    if (
+      menuButton &&
+      navigation
+    ) {
+
+      menuButton.onclick = () => {
+
+        const isOpen =
+          navigation.classList.toggle(
+            "open"
+          );
+
+
+        menuButton.setAttribute(
+          "aria-expanded",
+          isOpen
+            ? "true"
+            : "false"
+        );
+
+      };
 
     }
 
 
+    // ========================================================
+    // CART BUTTON
+    // ========================================================
+
     const cartButton =
       document.querySelector(
-        "#openCartButton"
+        "#openCart"
       );
 
 
     if (cartButton) {
 
-      cartButton.addEventListener(
-        "click",
-        openCart
-      );
+      cartButton.onclick =
+        () => this.openCart();
 
     }
 
-  }
+
+    this.updateCartCount();
+
+  },
 
 
-  // ============================================================
+  // ==========================================================
   // FOOTER
-  // ============================================================
+  // ==========================================================
 
-  function renderFooter() {
+  async renderFooter() {
 
-    const footer =
+    const element =
       document.querySelector(
         "#site-footer"
       );
 
 
-    if (!footer) {
-
+    if (!element) {
       return;
-
     }
 
 
-    footer.innerHTML = `
+    element.innerHTML = `
 
-      <footer class="site-footer">
+      <footer class="footer">
 
-        <div class="container">
+        <div class="container footer-grid">
 
-          <div class="footer-grid">
+          <div>
 
-            <div>
+            <div
+              class="logo"
+              style="color:#fff"
+            >
 
-              <h3>
-                Amiani's Fly Wholesalers
-              </h3>
+              AMIANI'S
 
-              <p>
-                Quality fishing flies for anglers,
-                fly shops and fishing businesses.
-              </p>
-
-            </div>
-
-
-            <div>
-
-              <h3>
-                Quick Links
-              </h3>
-
-              <a href="index.html">
-                Home
-              </a>
-
-              <a href="shop.html">
-                Shop
-              </a>
-
-            </div>
-
-
-            <div>
-
-              <h3>
-                Shopping
-              </h3>
-
-              <a href="shop.html">
-                Fishing Flies
-              </a>
-
-              <button
-                type="button"
-                class="footer-cart-button"
-                onclick="window.AMIANI.openCart()"
+              <span
+                style="color:#d7a83e"
               >
-                View Cart
-              </button>
+                FLY WHOLESALERS
+              </span>
 
             </div>
 
-          </div>
-
-
-          <div class="footer-bottom">
 
             <p>
-              © ${new Date().getFullYear()}
-              Amiani's Fly Wholesalers.
-              All rights reserved.
+              Quality fishing flies
+              for anglers, guides
+              and wholesale buyers.
+            </p>
+
+
+            <p>
+
+              <strong>
+                All prices are USD per dozen.
+              </strong>
+
             </p>
 
           </div>
+
+
+          <div>
+
+            <h3>
+              Shop
+            </h3>
+
+
+            <p>
+              <a href="shop.html">
+                All Flies
+              </a>
+            </p>
+
+
+            <p>
+              <a href="shop.html">
+                Categories
+              </a>
+            </p>
+
+
+            <p>
+              <a href="checkout.html">
+                Checkout
+              </a>
+            </p>
+
+          </div>
+
+
+          <div>
+
+            <h3>
+              Contact Amiani's Fly Wholesalers
+            </h3>
+
+
+            <p>
+
+              <strong>
+                Phone:
+              </strong>
+
+              <a href="tel:+254799028055">
+                +254 799 028 055
+              </a>
+
+            </p>
+
+
+            <p>
+
+              <strong>
+                WhatsApp:
+              </strong>
+
+              <a
+                href="https://wa.me/254720070960"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Chat with us on WhatsApp
+              </a>
+
+            </p>
+
+
+            <p>
+
+              <strong>
+                Email:
+              </strong>
+
+              <a href="mailto:amianieric@gmail.com">
+                amianieric@gmail.com
+              </a>
+
+            </p>
+
+
+            <p>
+
+              <a href="admin.html">
+                Admin Login
+              </a>
+
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="container footer-bottom">
+
+          © ${new Date().getFullYear()}
+          Amiani's Fly Wholesalers.
+          All rights reserved.
 
         </div>
 
@@ -968,14 +1158,306 @@
 
     `;
 
-  }
+  },
 
 
-  // ============================================================
-  // CART DRAWER
-  // ============================================================
+  // ==========================================================
+  // CART MARKUP
+  // ==========================================================
 
-  function openCart() {
+  cartMarkup() {
+
+    const cart =
+      this.cart();
+
+
+    return `
+
+      <div
+        class="cart-drawer"
+        id="cartDrawer"
+      >
+
+        <div
+          class="cart-overlay"
+          id="cartOverlay"
+        ></div>
+
+
+        <aside
+          class="cart-panel"
+          aria-label="Shopping cart"
+        >
+
+          <div
+            style="
+              display:flex;
+              justify-content:space-between;
+              align-items:center;
+              gap:15px;
+            "
+          >
+
+            <div>
+
+              <h2>
+                Your Cart
+              </h2>
+
+              <small class="muted">
+                All prices are per dozen.
+              </small>
+
+            </div>
+
+
+            <button
+              class="close"
+              id="closeCart"
+              type="button"
+              aria-label="Close cart"
+            >
+              ×
+            </button>
+
+          </div>
+
+
+          <div class="cart-items">
+
+            ${
+              cart.length
+
+                ? cart
+                    .map(
+                      (
+                        item,
+                        index
+                      ) => `
+
+                        <div class="cart-item">
+
+                          <img
+                            src="${
+                              item.image_url ||
+                              this.placeholder(
+                                item.name
+                              )
+                            }"
+                            alt="${this.esc(
+                              item.name
+                            )}"
+                          >
+
+
+                          <div>
+
+                            <strong>
+
+                              ${this.esc(
+                                item.name
+                              )}
+
+                            </strong>
+
+
+                            ${
+                              item.size
+                                ? `
+
+                                  <div
+                                    class="muted"
+                                    style="
+                                      margin-top:4px;
+                                    "
+                                  >
+
+                                    <strong>
+                                      Size:
+                                    </strong>
+
+                                    ${this.esc(
+                                      item.size
+                                    )}
+
+                                  </div>
+
+                                `
+                                : ""
+                            }
+
+
+                            ${
+                              item.color
+                                ? `
+
+                                  <div
+                                    class="muted"
+                                    style="
+                                      margin-top:3px;
+                                    "
+                                  >
+
+                                    <strong>
+                                      Color:
+                                    </strong>
+
+                                    ${this.esc(
+                                      item.color
+                                    )}
+
+                                  </div>
+
+                                `
+                                : ""
+                            }
+
+
+                            <div
+                              class="muted"
+                              style="
+                                margin-top:5px;
+                              "
+                            >
+
+                              ${this.moneyPerDozen(
+                                item.price
+                              )}
+
+                              ×
+
+                              ${Number(
+                                item.qty || 0
+                              )}
+
+                              dozen
+
+                            </div>
+
+
+                            <button
+                              class="
+                                btn
+                                btn-danger
+                                btn-sm
+                                remove-cart
+                              "
+                              data-index="${index}"
+                              type="button"
+                            >
+
+                              Remove
+
+                            </button>
+
+                          </div>
+
+
+                          <strong>
+
+                            ${this.money(
+                              Number(
+                                item.price || 0
+                              ) *
+                              Number(
+                                item.qty || 0
+                              )
+                            )}
+
+                          </strong>
+
+                        </div>
+
+                      `
+                    )
+                    .join("")
+
+                : `
+
+                  <div class="empty">
+
+                    Your cart is empty.
+
+                  </div>
+
+                `
+            }
+
+          </div>
+
+
+          <div
+            style="
+              border-top:1px solid var(--line);
+              padding-top:18px;
+            "
+          >
+
+            <div
+              style="
+                display:flex;
+                justify-content:space-between;
+                font-size:20px;
+                font-weight:900;
+              "
+            >
+
+              <span>
+                Total
+              </span>
+
+
+              <span>
+                ${this.money(
+                  this.total()
+                )}
+              </span>
+
+            </div>
+
+
+            <small
+              class="muted"
+              style="
+                display:block;
+                margin-top:5px;
+              "
+            >
+
+              Quantities are measured in dozens.
+
+            </small>
+
+
+            <a
+              class="btn btn-primary"
+              style="
+                width:100%;
+                margin-top:14px;
+              "
+              href="checkout.html"
+            >
+
+              Checkout
+
+            </a>
+
+          </div>
+
+        </aside>
+
+      </div>
+
+    `;
+
+  },
+
+
+  // ==========================================================
+  // OPEN CART
+  // ==========================================================
+
+  openCart() {
 
     let drawer =
       document.querySelector(
@@ -985,264 +1467,1837 @@
 
     if (!drawer) {
 
-      drawer =
-        document.createElement(
-          "div"
-        );
-
-
-      drawer.id =
-        "cartDrawer";
-
-
-      drawer.innerHTML = `
-
-        <div
-          class="cart-overlay"
-          id="cartOverlay"
-        ></div>
-
-
-        <aside
-          class="cart-drawer"
-          aria-label="Shopping cart"
-        >
-
-          <div class="cart-drawer-header">
-
-            <h2>
-              Your Cart
-            </h2>
-
-            <button
-              type="button"
-              id="closeCartButton"
-              aria-label="Close cart"
-            >
-              ×
-            </button>
-
-          </div>
-
-
-          <div
-            id="cartItems"
-            class="cart-items"
-          ></div>
-
-
-          <div class="cart-drawer-footer">
-
-            <div class="cart-total-row">
-
-              <span>
-                Total
-              </span>
-
-              <strong
-                id="cartTotal"
-              >
-                $0.00
-              </strong>
-
-            </div>
-
-
-            <a
-              href="checkout.html"
-              class="btn btn-primary"
-            >
-              Checkout
-            </a>
-
-          </div>
-
-        </aside>
-
-      `;
-
-
-      document.body.appendChild(
-        drawer
+      document.body.insertAdjacentHTML(
+        "beforeend",
+        this.cartMarkup()
       );
 
 
-      document
-        .querySelector(
-          "#cartOverlay"
-        )
-        .addEventListener(
-          "click",
-          closeCart
-        );
-
-
-      document
-        .querySelector(
-          "#closeCartButton"
-        )
-        .addEventListener(
-          "click",
-          closeCart
+      drawer =
+        document.querySelector(
+          "#cartDrawer"
         );
 
     }
 
 
-    renderCartDrawer();
+    if (!drawer) {
+      return;
+    }
 
 
     drawer.classList.add(
       "open"
     );
 
-  }
 
+    // ========================================================
+    // CLOSE
+    // ========================================================
 
-  function closeCart() {
-
-    const drawer =
-      document.querySelector(
-        "#cartDrawer"
+    const closeButton =
+      drawer.querySelector(
+        "#closeCart"
       );
 
 
-    if (drawer) {
+    if (closeButton) {
 
-      drawer.classList.remove(
-        "open"
+      closeButton.onclick =
+        () => {
+
+          drawer.classList.remove(
+            "open"
+          );
+
+        };
+
+    }
+
+
+    // ========================================================
+    // OVERLAY
+    // ========================================================
+
+    const overlay =
+      drawer.querySelector(
+        "#cartOverlay"
+      );
+
+
+    if (overlay) {
+
+      overlay.onclick =
+        () => {
+
+          drawer.classList.remove(
+            "open"
+          );
+
+        };
+
+    }
+
+
+    // ========================================================
+    // REMOVE
+    // ========================================================
+
+    drawer
+      .querySelectorAll(
+        ".remove-cart"
+      )
+      .forEach(
+        button => {
+
+          button.onclick =
+            () => {
+
+              const index =
+                Number(
+                  button.dataset.index
+                );
+
+
+              this.removeCartItem(
+                index
+              );
+
+
+              drawer.remove();
+
+
+              this.openCart();
+
+            };
+
+        }
+      );
+
+  }
+
+};
+
+
+// ============================================================
+// BACKWARD COMPATIBILITY
+// ============================================================
+
+window.AMIANI =
+  AMIANI;
+
+window.AMANI =
+  AMIANI;
+
+
+// ============================================================
+// DOM READY
+// ============================================================
+
+document.addEventListener(
+  "DOMContentLoaded",
+  async () => {
+
+    try {
+
+      if (!AMIANI.sb) {
+
+        console.error(
+          "Supabase is not configured."
+        );
+
+
+        const message =
+          document.querySelector(
+            "#supabaseError"
+          );
+
+
+        if (message) {
+
+          message.textContent =
+            "Supabase is not configured.";
+
+        }
+
+
+        return;
+
+      }
+
+
+      await AMIANI.renderHeader();
+
+      await AMIANI.renderFooter();
+
+
+      // ======================================================
+      // HOME CATEGORIES
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "[data-home-categories]"
+        )
+      ) {
+
+        await loadHome();
+
+      }
+
+
+      // ======================================================
+      // HOME PRODUCTS
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "[data-home-products]"
+        )
+      ) {
+
+        await loadHomeProducts();
+
+      }
+
+
+      // ======================================================
+      // SHOP
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "#shopGrid"
+        )
+      ) {
+
+        await loadShop();
+
+      }
+
+
+      // ======================================================
+      // PRODUCT
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "#productDetail"
+        )
+      ) {
+
+        await loadProductPage();
+
+      }
+
+
+      // ======================================================
+      // CATEGORY
+      // ======================================================
+
+      if (
+        document.querySelector(
+          "#categoryPage"
+        )
+      ) {
+
+        await loadCategoryPage();
+
+      }
+
+
+      AMIANI.updateCartCount();
+
+    } catch (error) {
+
+      console.error(
+        "Storefront initialization error:",
+        error
       );
 
     }
 
   }
+);
 
 
-  function renderCartDrawer() {
+// ============================================================
+// HOME CATEGORIES
+// ============================================================
 
-    const items =
-      cart();
+async function loadHome() {
+
+  const element =
+    document.querySelector(
+      "[data-home-categories]"
+    );
+
+
+  if (!element) {
+    return;
+  }
+
+
+  try {
+
+    const categories =
+      await AMIANI.categories();
+
+
+    element.innerHTML =
+      categories
+        .slice(
+          0,
+          8
+        )
+        .map(
+          category => `
+
+            <a
+              class="card category-card"
+              href="category.html?slug=${encodeURIComponent(
+                category.slug
+              )}"
+            >
+
+              <img
+                src="${
+                  category.image_url ||
+                  AMIANI.placeholder(
+                    category.name
+                  )
+                }"
+                alt="${AMIANI.esc(
+                  category.name
+                )}"
+                loading="lazy"
+              >
+
+
+              <div class="card-body">
+
+                <h3>
+
+                  ${AMIANI.esc(
+                    category.name
+                  )}
+
+                </h3>
+
+
+                <p class="muted">
+
+                  ${AMIANI.esc(
+                    category.description ||
+                    "Explore this fishing fly collection."
+                  )}
+
+                </p>
+
+              </div>
+
+            </a>
+
+          `
+        )
+        .join("")
+
+
+      ||
+
+      `
+
+        <div class="empty">
+
+          No categories yet.
+          Add categories from Admin.
+
+        </div>
+
+      `;
+
+
+  } catch (error) {
+
+    console.error(
+      "Could not load categories:",
+      error
+    );
+
+
+    element.innerHTML = `
+
+      <div class="notice error">
+
+        ${AMIANI.esc(
+          error.message
+        )}
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+// ============================================================
+// HOME PRODUCTS
+// ============================================================
+
+async function loadHomeProducts() {
+
+  const element =
+    document.querySelector(
+      "[data-home-products]"
+    );
+
+
+  if (!element) {
+    return;
+  }
+
+
+  try {
+
+    const products =
+      await AMIANI.products();
 
 
     const list =
-      document.querySelector(
-        "#cartItems"
+      products.slice(
+        0,
+        8
       );
 
 
-    const totalElement =
-      document.querySelector(
-        "#cartTotal"
+    element.innerHTML =
+      list
+        .map(
+          productCard
+        )
+        .join("")
+
+
+      ||
+
+      `
+
+        <div class="empty">
+
+          No products yet.
+
+        </div>
+
+      `;
+
+
+    attachAddButtons(
+      element,
+      products
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Could not load home products:",
+      error
+    );
+
+
+    element.innerHTML = `
+
+      <div class="notice error">
+
+        ${AMIANI.esc(
+          error.message
+        )}
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+// ============================================================
+// PRODUCT CARD
+// ============================================================
+//
+// Product cards show available sizes/colors.
+//
+// Customer is taken to product.html where the exact
+// variant can be selected before adding to cart.
+// ============================================================
+
+function productCard(
+  product
+) {
+
+  const stock =
+    Number(
+      product.stock || 0
+    );
+
+
+  const isOutOfStock =
+    stock <= 0;
+
+
+  const sizes =
+    AMIANI.parseOptions(
+      product.sizes
+    );
+
+
+  const colors =
+    AMIANI.parseOptions(
+      product.colors
+    );
+
+
+  return `
+
+    <article
+      class="card product-card"
+    >
+
+      <a
+        href="product.html?id=${encodeURIComponent(
+          product.id
+        )}"
+      >
+
+        <img
+          src="${
+            product.image_url ||
+            AMIANI.placeholder(
+              product.name
+            )
+          }"
+          alt="${AMIANI.esc(
+            product.name
+          )}"
+          loading="lazy"
+        >
+
+      </a>
+
+
+      <div class="card-body">
+
+        <span class="badge">
+
+          ${AMIANI.esc(
+            product.categories?.name ||
+            "Fishing Fly"
+          )}
+
+        </span>
+
+
+        <h3>
+
+          ${AMIANI.esc(
+            product.name
+          )}
+
+        </h3>
+
+
+        <div
+          class="product-meta"
+        >
+
+          <div>
+
+            <span class="price">
+
+              ${AMIANI.moneyPerDozen(
+                product.price
+              )}
+
+            </span>
+
+          </div>
+
+
+          <button
+            class="
+              btn
+              btn-primary
+              btn-sm
+              add-product
+            "
+            data-id="${AMIANI.escAttr(
+              product.id
+            )}"
+            type="button"
+            ${isOutOfStock ? "disabled" : ""}
+          >
+
+            ${
+              isOutOfStock
+                ? "Out of Stock"
+                : "Select Options"
+            }
+
+          </button>
+
+        </div>
+
+
+        <small
+          class="muted"
+          style="
+            display:block;
+            margin-top:6px;
+          "
+        >
+
+          Price per dozen
+
+        </small>
+
+
+        <small
+          class="muted"
+          style="
+            display:block;
+            margin-top:4px;
+          "
+        >
+
+          Stock:
+          ${stock}
+          dozen${stock === 1 ? "" : "s"}
+
+        </small>
+
+
+        ${
+          sizes.length
+            ? `
+
+              <small
+                class="muted"
+                style="
+                  display:block;
+                  margin-top:5px;
+                "
+              >
+
+                <strong>
+                  Sizes:
+                </strong>
+
+                ${AMIANI.esc(
+                  sizes.join(", ")
+                )}
+
+              </small>
+
+            `
+            : ""
+        }
+
+
+        ${
+          colors.length
+            ? `
+
+              <small
+                class="muted"
+                style="
+                  display:block;
+                  margin-top:5px;
+                "
+              >
+
+                <strong>
+                  Colors:
+                </strong>
+
+                ${AMIANI.esc(
+                  colors.join(", ")
+                )}
+
+              </small>
+
+            `
+            : ""
+        }
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+// ============================================================
+// ATTACH PRODUCT BUTTONS
+// ============================================================
+
+function attachAddButtons(
+  container,
+  products
+) {
+
+  if (!container) {
+    return;
+  }
+
+
+  container
+    .querySelectorAll(
+      ".add-product"
+    )
+    .forEach(
+      button => {
+
+        button.onclick =
+          () => {
+
+            const product =
+              products.find(
+                item =>
+                  String(
+                    item.id
+                  ) ===
+                  String(
+                    button.dataset.id
+                  )
+              );
+
+
+            if (!product) {
+              return;
+            }
+
+
+            if (
+              Number(
+                product.stock || 0
+              ) <= 0
+            ) {
+
+              alert(
+                "This product is currently out of stock."
+              );
+
+              return;
+
+            }
+
+
+            window.location.href =
+              `product.html?id=${encodeURIComponent(
+                product.id
+              )}`;
+
+          };
+
+      }
+    );
+
+}
+
+
+// ============================================================
+// SHOP
+// ============================================================
+
+async function loadShop() {
+
+  const grid =
+    document.querySelector(
+      "#shopGrid"
+    );
+
+
+  if (!grid) {
+    return;
+  }
+
+
+  const search =
+    document.querySelector(
+      "#shopSearch"
+    );
+
+
+  const filter =
+    document.querySelector(
+      "#shopCategory"
+    );
+
+
+  try {
+
+    const [
+      products,
+      categories
+    ] =
+      await Promise.all([
+        AMIANI.products(),
+        AMIANI.categories()
+      ]);
+
+
+    if (filter) {
+
+      filter.innerHTML =
+        '<option value="">All categories</option>' +
+
+        categories
+          .map(
+            category => `
+
+              <option
+                value="${AMIANI.escAttr(
+                  category.id
+                )}"
+              >
+
+                ${AMIANI.esc(
+                  category.name
+                )}
+
+              </option>
+
+            `
+          )
+          .join("");
+
+    }
+
+
+    function draw() {
+
+      const query =
+        search
+          ? search.value
+              .toLowerCase()
+              .trim()
+          : "";
+
+
+      const categoryId =
+        filter
+          ? filter.value
+          : "";
+
+
+      const list =
+        products.filter(
+          product => {
+
+            const name =
+              String(
+                product.name || ""
+              )
+              .toLowerCase();
+
+
+            const description =
+              String(
+                product.description || ""
+              )
+              .toLowerCase();
+
+
+            const matchesSearch =
+              !query ||
+              name.includes(query) ||
+              description.includes(query);
+
+
+            const matchesCategory =
+              !categoryId ||
+              String(
+                product.category_id
+              ) ===
+              String(
+                categoryId
+              );
+
+
+            return (
+              matchesSearch &&
+              matchesCategory
+            );
+
+          }
+        );
+
+
+      grid.innerHTML =
+        list
+          .map(
+            productCard
+          )
+          .join("")
+
+
+        ||
+
+        `
+
+          <div class="empty">
+
+            No matching flies found.
+
+          </div>
+
+        `;
+
+
+      attachAddButtons(
+        grid,
+        products
+      );
+
+    }
+
+
+    if (search) {
+
+      search.oninput =
+        draw;
+
+    }
+
+
+    if (filter) {
+
+      filter.onchange =
+        draw;
+
+    }
+
+
+    draw();
+
+
+  } catch (error) {
+
+    console.error(
+      "Could not load shop:",
+      error
+    );
+
+
+    grid.innerHTML = `
+
+      <div class="notice error">
+
+        ${AMIANI.esc(
+          error.message
+        )}
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+// ============================================================
+// PRODUCT DETAIL
+// ============================================================
+
+async function loadProductPage() {
+
+  const box =
+    document.querySelector(
+      "#productDetail"
+    );
+
+
+  if (!box) {
+    return;
+  }
+
+
+  const id =
+    new URLSearchParams(
+      window.location.search
+    ).get("id");
+
+
+  if (!id) {
+
+    box.innerHTML = `
+
+      <div class="notice error">
+
+        Product not found.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  try {
+
+    const product =
+      await AMIANI.product(
+        id
       );
 
 
-    if (!list) {
+    const stock =
+      Number(
+        product.stock || 0
+      );
+
+
+    const outOfStock =
+      stock <= 0;
+
+
+    // ========================================================
+    // OPTIONS
+    // ========================================================
+
+    const sizes =
+      AMIANI.parseOptions(
+        product.sizes
+      );
+
+
+    const colors =
+      AMIANI.parseOptions(
+        product.colors
+      );
+
+
+    box.innerHTML = `
+
+      <div
+        class="product-detail-image"
+      >
+
+        <img
+          src="${
+            product.image_url ||
+            AMIANI.placeholder(
+              product.name
+            )
+          }"
+          alt="${AMIANI.esc(
+            product.name
+          )}"
+        >
+
+      </div>
+
+
+      <div>
+
+        <span class="badge">
+
+          ${AMIANI.esc(
+            product.categories?.name ||
+            "Fishing Fly"
+          )}
+
+        </span>
+
+
+        <h1>
+
+          ${AMIANI.esc(
+            product.name
+          )}
+
+        </h1>
+
+
+        <div
+          class="price"
+          style="
+            font-size:28px;
+          "
+        >
+
+          ${AMIANI.moneyPerDozen(
+            product.price
+          )}
+
+        </div>
+
+
+        <p
+          class="muted"
+          style="
+            font-weight:600;
+          "
+        >
+
+          Price is for one dozen
+          (12 flies).
+
+        </p>
+
+
+        <p>
+
+          ${AMIANI.esc(
+            product.description ||
+            "Quality fishing fly from Amiani's Fly Wholesalers."
+          )}
+
+        </p>
+
+
+        <!-- ==================================================
+             SIZE
+        =================================================== -->
+
+        ${
+          sizes.length
+            ? `
+
+              <div
+                class="form-group"
+                style="
+                  margin-top:20px;
+                "
+              >
+
+                <label
+                  for="productSize"
+                >
+
+                  Select Size
+
+                  <span
+                    style="
+                      color:#b42318;
+                    "
+                  >
+                    *
+                  </span>
+
+                </label>
+
+
+                <select
+                  id="productSize"
+                  class="field"
+                  ${outOfStock ? "disabled" : ""}
+                >
+
+                  <option value="">
+                    Choose a size
+                  </option>
+
+                  ${
+                    sizes
+                      .map(
+                        size => `
+
+                          <option
+                            value="${AMIANI.escAttr(
+                              size
+                            )}"
+                          >
+
+                            ${AMIANI.esc(
+                              size
+                            )}
+
+                          </option>
+
+                        `
+                      )
+                      .join("")
+                  }
+
+                </select>
+
+              </div>
+
+            `
+            : ""
+        }
+
+
+        <!-- ==================================================
+             COLOR
+        =================================================== -->
+
+        ${
+          colors.length
+            ? `
+
+              <div
+                class="form-group"
+                style="
+                  margin-top:15px;
+                "
+              >
+
+                <label
+                  for="productColor"
+                >
+
+                  Select Color
+
+                  <span
+                    style="
+                      color:#b42318;
+                    "
+                  >
+                    *
+                  </span>
+
+                </label>
+
+
+                <select
+                  id="productColor"
+                  class="field"
+                  ${outOfStock ? "disabled" : ""}
+                >
+
+                  <option value="">
+                    Choose a color
+                  </option>
+
+                  ${
+                    colors
+                      .map(
+                        color => `
+
+                          <option
+                            value="${AMIANI.escAttr(
+                              color
+                            )}"
+                          >
+
+                            ${AMIANI.esc(
+                              color
+                            )}
+
+                          </option>
+
+                        `
+                      )
+                      .join("")
+                  }
+
+                </select>
+
+              </div>
+
+            `
+            : ""
+        }
+
+
+        <!-- ==================================================
+             STOCK
+        =================================================== -->
+
+        <p
+          style="
+            margin-top:15px;
+            font-weight:700;
+          "
+        >
+
+          <strong>
+            Stock:
+          </strong>
+
+          ${stock}
+          dozen${stock === 1 ? "" : "s"}
+
+        </p>
+
+
+        ${
+          outOfStock
+            ? `
+
+              <div
+                class="notice error"
+                style="
+                  margin-top:12px;
+                "
+              >
+
+                This product is currently
+                out of stock.
+
+              </div>
+
+            `
+            : ""
+        }
+
+
+        <!-- ==================================================
+             QUANTITY
+        =================================================== -->
+
+        <div
+          class="qty"
+          style="
+            margin-top:18px;
+          "
+        >
+
+          <label
+            for="qty"
+            class="muted"
+            style="
+              width:100%;
+              display:block;
+              margin-bottom:6px;
+            "
+          >
+
+            Quantity (dozens)
+
+          </label>
+
+
+          <button
+            id="minus"
+            type="button"
+            ${outOfStock ? "disabled" : ""}
+          >
+            −
+          </button>
+
+
+          <input
+            class="field"
+            id="qty"
+            type="number"
+            min="1"
+            max="${stock > 0 ? stock : 1}"
+            value="1"
+            ${outOfStock ? "disabled" : ""}
+          >
+
+
+          <button
+            id="plus"
+            type="button"
+            ${outOfStock ? "disabled" : ""}
+          >
+            +
+          </button>
+
+        </div>
+
+
+        <!-- ==================================================
+             MESSAGE
+        =================================================== -->
+
+        <div
+          id="productOptionMessage"
+          style="
+            margin-top:12px;
+            margin-bottom:12px;
+          "
+        ></div>
+
+
+        <!-- ==================================================
+             ADD TO CART
+        =================================================== -->
+
+        <button
+          class="
+            btn
+            btn-primary
+          "
+          id="addDetail"
+          type="button"
+          ${outOfStock ? "disabled" : ""}
+          style="
+            width:100%;
+            margin-top:10px;
+          "
+        >
+
+          ${
+            outOfStock
+              ? "Out of Stock"
+              : "Add 1 Dozen to Cart"
+          }
+
+        </button>
+
+      </div>
+
+    `;
+
+
+    // ========================================================
+    // ELEMENTS
+    // ========================================================
+
+    const quantityInput =
+      document.querySelector(
+        "#qty"
+      );
+
+
+    const addButton =
+      document.querySelector(
+        "#addDetail"
+      );
+
+
+    const minusButton =
+      document.querySelector(
+        "#minus"
+      );
+
+
+    const plusButton =
+      document.querySelector(
+        "#plus"
+      );
+
+
+    const sizeSelect =
+      document.querySelector(
+        "#productSize"
+      );
+
+
+    const colorSelect =
+      document.querySelector(
+        "#productColor"
+      );
+
+
+    const optionMessage =
+      document.querySelector(
+        "#productOptionMessage"
+      );
+
+
+    if (
+      !quantityInput ||
+      !addButton
+    ) {
 
       return;
 
     }
 
 
-    if (!items.length) {
+    // ========================================================
+    // UPDATE ADD BUTTON
+    // ========================================================
 
-      list.innerHTML = `
+    function updateAddButton() {
 
-        <div class="empty-state">
-
-          <h3>
-            Your cart is empty
-          </h3>
-
-          <p>
-            Add fishing flies to your
-            cart to continue.
-          </p>
-
-          <a
-            href="shop.html"
-            class="btn btn-primary"
-          >
-            Shop Flies
-          </a>
-
-        </div>
-
-      `;
-
-    } else {
-
-      list.innerHTML =
-        items.map(item => {
-
-          const lineTotal =
-            Number(item.price || 0) *
-            Number(item.qty || 0);
+      let quantity =
+        Number(
+          quantityInput.value || 1
+        );
 
 
-          return `
+      if (
+        !Number.isFinite(
+          quantity
+        )
+      ) {
 
-            <div
-              class="cart-item"
-              data-cart-key="${escAttr(item.key)}"
-            >
+        quantity = 1;
 
-              <img
-                src="${
-                  escAttr(
-                    item.image_url ||
-                    placeholder("Fly")
-                  )
-                }"
-                alt="${escAttr(item.name)}"
-                loading="lazy"
+      }
+
+
+      quantity =
+        Math.max(
+          1,
+          Math.floor(
+            quantity
+          )
+        );
+
+
+      if (stock > 0) {
+
+        quantity =
+          Math.min(
+            quantity,
+            stock
+          );
+
+      }
+
+
+      quantityInput.value =
+        quantity;
+
+
+      addButton.textContent =
+        quantity === 1
+          ? "Add 1 Dozen to Cart"
+          : `Add ${quantity} Dozen to Cart`;
+
+    }
+
+
+    // ========================================================
+    // MINUS
+    // ========================================================
+
+    if (minusButton) {
+
+      minusButton.onclick =
+        () => {
+
+          const current =
+            Number(
+              quantityInput.value || 1
+            );
+
+
+          quantityInput.value =
+            Math.max(
+              1,
+              current - 1
+            );
+
+
+          updateAddButton();
+
+        };
+
+    }
+
+
+    // ========================================================
+    // PLUS
+    // ========================================================
+
+    if (plusButton) {
+
+      plusButton.onclick =
+        () => {
+
+          let quantity =
+            Number(
+              quantityInput.value || 1
+            ) + 1;
+
+
+          if (stock > 0) {
+
+            quantity =
+              Math.min(
+                quantity,
+                stock
+              );
+
+          }
+
+
+          quantityInput.value =
+            quantity;
+
+
+          updateAddButton();
+
+        };
+
+    }
+
+
+    // ========================================================
+    // MANUAL QUANTITY
+    // ========================================================
+
+    quantityInput.oninput =
+      () => {
+
+        let quantity =
+          Number(
+            quantityInput.value
+          );
+
+
+        if (
+          !Number.isFinite(
+            quantity
+          ) ||
+          quantity < 1
+        ) {
+
+          quantity = 1;
+
+        }
+
+
+        if (stock > 0) {
+
+          quantity =
+            Math.min(
+              quantity,
+              stock
+            );
+
+        }
+
+
+        quantityInput.value =
+          Math.floor(
+            quantity
+          );
+
+
+        updateAddButton();
+
+      };
+
+
+    // ========================================================
+    // CLEAR OPTION MESSAGE
+    // ========================================================
+
+    function clearOptionMessage() {
+
+      if (optionMessage) {
+
+        optionMessage.innerHTML =
+          "";
+
+      }
+
+    }
+
+
+    if (sizeSelect) {
+
+      sizeSelect.onchange =
+        clearOptionMessage;
+
+    }
+
+
+    if (colorSelect) {
+
+      colorSelect.onchange =
+        clearOptionMessage;
+
+    }
+
+
+    // ========================================================
+    // ADD TO CART
+    // ========================================================
+
+    addButton.onclick =
+      () => {
+
+        let quantity =
+          Number(
+            quantityInput.value || 1
+          );
+
+
+        if (
+          !Number.isFinite(
+            quantity
+          )
+        ) {
+
+          quantity = 1;
+
+        }
+
+
+        quantity =
+          Math.max(
+            1,
+            Math.floor(
+              quantity
+            )
+          );
+
+
+        if (stock > 0) {
+
+          quantity =
+            Math.min(
+              quantity,
+              stock
+            );
+
+        }
+
+
+        const selectedSize =
+          sizeSelect
+            ? sizeSelect.value.trim()
+            : "";
+
+
+        const selectedColor =
+          colorSelect
+            ? colorSelect.value.trim()
+            : "";
+
+
+        // ====================================================
+        // SIZE VALIDATION
+        // ====================================================
+
+        if (
+          sizes.length &&
+          !selectedSize
+        ) {
+
+          if (optionMessage) {
+
+            optionMessage.innerHTML = `
+
+              <div
+                class="notice error"
               >
 
+                Please select a size
+                before adding this fly
+                to your cart.
 
-              <div class="cart-item-info">
+              </div>
 
-                <h4>
-                  ${esc(item.name)}
-                </h4>
+            `;
 
+          }
+
+
+          if (sizeSelect) {
+
+            sizeSelect.focus();
+
+          }
+
+
+          return;
+
+        }
+
+
+        // ====================================================
+        // COLOR VALIDATION
+        // ====================================================
+
+        if (
+          colors.length &&
+          !selectedColor
+        ) {
+
+          if (optionMessage) {
+
+            optionMessage.innerHTML = `
+
+              <div
+                class="notice error"
+              >
+
+                Please select a color
+                before adding this fly
+                to your cart.
+
+              </div>
+
+            `;
+
+          }
+
+
+          if (colorSelect) {
+
+            colorSelect.focus();
+
+          }
+
+
+          return;
+
+        }
+
+
+        // ====================================================
+        // ADD
+        // ====================================================
+
+        const added =
+          AMIANI.addCart(
+            product,
+            quantity,
+            selectedSize,
+            selectedColor
+          );
+
+
+        if (
+          added &&
+          optionMessage
+        ) {
+
+          optionMessage.innerHTML = `
+
+            <div
+              class="notice"
+            >
+
+              <strong>
+                Added to cart.
+              </strong>
+
+              <div
+                style="
+                  margin-top:5px;
+                "
+              >
+
+                ${quantity}
+                dozen
+                ${quantity === 1 ? "" : "s"}
 
                 ${
-                  item.size
-                    ? `<p>Size: ${esc(item.size)}</p>`
+                  selectedSize
+                    ? ` • Size: ${AMIANI.esc(
+                        selectedSize
+                      )}`
                     : ""
                 }
 
-
                 ${
-                  item.color
-                    ? `<p>Color: ${esc(item.color)}</p>`
+                  selectedColor
+                    ? ` • Color: ${AMIANI.esc(
+                        selectedColor
+                      )}`
                     : ""
                 }
-
-
-                <p>
-                  ${money(item.price)}
-                  / dozen
-                </p>
-
-
-                <p>
-                  Qty:
-                  ${Number(item.qty || 0)}
-                </p>
-
-
-                <strong>
-                  ${money(lineTotal)}
-                </strong>
-
-
-                <button
-                  type="button"
-                  class="cart-remove"
-                  data-remove-cart="${escAttr(item.key)}"
-                >
-                  Remove
-                </button>
 
               </div>
 
@@ -1250,1759 +3305,197 @@
 
           `;
 
-        }).join("");
+        }
 
-    }
-
-
-    if (totalElement) {
-
-      totalElement.textContent =
-        money(total());
-
-    }
+      };
 
 
-    list
-      .querySelectorAll(
-        "[data-remove-cart]"
-      )
-      .forEach(button => {
+    updateAddButton();
 
-        button.addEventListener(
-          "click",
-          () => {
+  } catch (error) {
 
-            removeCartItem(
-              button.dataset.removeCart
-            );
-
-            renderCartDrawer();
-
-          }
-        );
-
-      });
-
-  }
+    console.error(
+      "Could not load product:",
+      error
+    );
 
 
-  // ============================================================
-  // PRODUCT CARD
-  // ============================================================
+    box.innerHTML = `
 
-  function productCard(productData) {
+      <div class="notice error">
 
-    const image =
-      productData.image_url ||
-      placeholder("Fly");
+        ${AMIANI.esc(
+          error.message
+        )}
 
-
-    const categoryName =
-      productData.categories?.name ||
-      "";
-
-
-    const stock =
-      Number(productData.stock || 0);
-
-
-    const outOfStock =
-      stock <= 0;
-
-
-    const sizes =
-      parseOptions(
-        productData.sizes
-      );
-
-
-    const colors =
-      parseOptions(
-        productData.colors
-      );
-
-
-    return `
-
-      <article
-        class="product-card"
-        data-product-id="${escAttr(productData.id)}"
-      >
-
-        <a
-          href="product.html?id=${encodeURIComponent(productData.id)}"
-          class="product-image-link"
-        >
-
-          <div class="product-image-wrap">
-
-            <img
-              src="${escAttr(image)}"
-              alt="${escAttr(productData.name)}"
-              class="product-image"
-              loading="lazy"
-            >
-
-            ${
-              outOfStock
-                ? `
-                  <span class="product-badge out-of-stock">
-                    Out of Stock
-                  </span>
-                `
-                : ""
-            }
-
-          </div>
-
-        </a>
-
-
-        <div class="product-card-body">
-
-
-          ${
-            categoryName
-              ? `
-                <div class="product-category">
-                  ${esc(categoryName)}
-                </div>
-              `
-              : ""
-          }
-
-
-          <h3 class="product-title">
-
-            ${esc(productData.name)}
-
-          </h3>
-
-
-          <div class="product-price">
-
-            ${moneyPerDozen(productData.price)}
-
-          </div>
-
-
-          ${
-            sizes.length
-              ? `
-                <div class="product-options-preview">
-                  Sizes:
-                  ${esc(sizes.join(", "))}
-                </div>
-              `
-              : ""
-          }
-
-
-          ${
-            colors.length
-              ? `
-                <div class="product-options-preview">
-                  Colors:
-                  ${esc(colors.join(", "))}
-                </div>
-              `
-              : ""
-          }
-
-
-          <div class="product-stock">
-
-            ${
-              outOfStock
-                ? "Currently unavailable"
-                : `${stock} dozen${stock === 1 ? "" : "s"} available`
-            }
-
-          </div>
-
-
-          <a
-            href="product.html?id=${encodeURIComponent(productData.id)}"
-            class="btn btn-primary product-select-button"
-          >
-
-            ${
-              outOfStock
-                ? "View Details"
-                : "Select Options"
-            }
-
-          </a>
-
-
-        </div>
-
-      </article>
+      </div>
 
     `;
 
   }
 
-
-  // ============================================================
-  // ATTACH PRODUCT CARD BUTTONS
-  // ============================================================
-
-  function attachAddButtons(
-    container,
-    productList
-  ) {
-
-    if (!container) {
-
-      return;
-
-    }
+}
 
 
-    /*
-     * Product cards already navigate to product.html.
-     *
-     * This function is kept so that product grids created
-     * dynamically continue to work correctly.
-     */
+// ============================================================
+// CATEGORY PAGE
+// ============================================================
 
-    container
-      .querySelectorAll(
-        "[data-product-id]"
-      )
-      .forEach(card => {
+async function loadCategoryPage() {
 
-        card.addEventListener(
-          "mouseenter",
-          () => {
-
-            card.classList.add(
-              "product-hover"
-            );
-
-          }
-        );
+  const box =
+    document.querySelector(
+      "#categoryPage"
+    );
 
 
-        card.addEventListener(
-          "mouseleave",
-          () => {
+  if (!box) {
+    return;
+  }
 
-            card.classList.remove(
-              "product-hover"
-            );
 
-          }
-        );
+  const slug =
+    new URLSearchParams(
+      window.location.search
+    ).get("slug");
 
-      });
+
+  if (!slug) {
+
+    box.innerHTML = `
+
+      <div class="notice error">
+
+        Category not found.
+
+      </div>
+
+    `;
+
+    return;
 
   }
 
 
-  // ============================================================
-  // HOME PAGE
-  // ============================================================
+  try {
 
-  async function loadHome() {
+    const [
+      category,
+      products
+    ] =
+      await Promise.all([
+        AMIANI.category(
+          slug
+        ),
+        AMIANI.products()
+      ]);
 
-    await loadHomeProducts();
 
-  }
-
-
-  // ============================================================
-  // HOME PRODUCTS
-  // ============================================================
-
-  async function loadHomeProducts() {
-
-    const grid =
-      document.querySelector(
-        "#latestProducts"
+    const list =
+      products.filter(
+        product =>
+          String(
+            product.category_id
+          ) ===
+          String(
+            category.id
+          )
       );
 
 
-    if (!grid) {
+    box.innerHTML = `
 
-      return;
+      <div
+        class="section-head"
+      >
 
-    }
+        <div>
 
-
-    try {
-
-      const list =
-        await products();
-
-
-      const latest =
-        list.slice(0, 8);
-
-
-      if (!latest.length) {
-
-        grid.innerHTML = `
-
-          <div class="notice">
-            No products available yet.
+          <div class="eyebrow">
+            Collection
           </div>
 
-        `;
 
-        return;
+          <h1>
 
-      }
+            ${AMIANI.esc(
+              category.name
+            )}
 
+          </h1>
 
-      grid.innerHTML =
-        latest.map(
-          productCard
-        ).join("");
 
+          <p class="muted">
 
-      attachAddButtons(
-        grid,
-        latest
-      );
+            ${AMIANI.esc(
+              category.description ||
+              ""
+            )}
 
-
-    } catch (error) {
-
-      console.error(
-        "Home products error:",
-        error
-      );
-
-
-      grid.innerHTML = `
-
-        <div class="notice">
-          Unable to load products.
-          Please try again later.
-        </div>
-
-      `;
-
-    }
-
-  }
-
-
-  // ============================================================
-  // SHOP PAGE
-  // ============================================================
-
-  async function loadShop() {
-
-    const grid =
-      document.querySelector(
-        "#shopProducts"
-      );
-
-
-    if (!grid) {
-
-      return;
-
-    }
-
-
-    try {
-
-      const list =
-        await products();
-
-
-      if (!list.length) {
-
-        grid.innerHTML = `
-
-          <div class="notice">
-            No products available.
-          </div>
-
-        `;
-
-        return;
-
-      }
-
-
-      grid.innerHTML =
-        list.map(
-          productCard
-        ).join("");
-
-
-      attachAddButtons(
-        grid,
-        list
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "Shop error:",
-        error
-      );
-
-
-      grid.innerHTML = `
-
-        <div class="notice">
-          Unable to load products.
-        </div>
-
-      `;
-
-    }
-
-  }
-
-
-  // ============================================================
-  // RELATED PRODUCTS
-  //
-  // THIS IS THE IMPORTANT NEW FEATURE.
-  //
-  // Example:
-  //
-  // User opens:
-  // Adams
-  //
-  // Below Adams:
-  //
-  // Adams Dry
-  // Parachute Adams
-  // Adams Irresistible
-  // CDC Adams
-  // etc.
-  //
-  // Every product belonging to the same category is shown.
-  //
-  // The current product is excluded.
-  // ============================================================
-
-  async function loadRelatedProducts(
-    currentProduct
-  ) {
-
-    const section =
-      document.querySelector(
-        "#relatedProducts"
-      );
-
-
-    const grid =
-      document.querySelector(
-        "#relatedProductsGrid"
-      );
-
-
-    const title =
-      document.querySelector(
-        "#relatedProductsTitle"
-      );
-
-
-    const description =
-      document.querySelector(
-        "#relatedProductsDescription"
-      );
-
-
-    if (
-      !section ||
-      !grid ||
-      !currentProduct
-    ) {
-
-      return;
-
-    }
-
-
-    try {
-
-      /*
-       * Get category ID.
-       *
-       * Normally this is:
-       *
-       * currentProduct.category_id
-       *
-       * The fallback also supports:
-       *
-       * currentProduct.categories.id
-       */
-
-      const categoryId =
-        currentProduct.category_id ||
-        currentProduct.categories?.id ||
-        "";
-
-
-      /*
-       * If the product does not have
-       * a category, there is nothing
-       * to recommend.
-       */
-
-      if (!categoryId) {
-
-        section.style.display =
-          "none";
-
-        return;
-
-      }
-
-
-      /*
-       * Load all products from Supabase.
-       */
-
-      const allProducts =
-        await products();
-
-
-      /*
-       * Find every product that belongs
-       * to the same category.
-       *
-       * IMPORTANT:
-       *
-       * We compare category_id.
-       *
-       * We DO NOT compare product names.
-       *
-       * This means it works for:
-       *
-       * Adams
-       * Cahill
-       * Bivisible
-       * Hare's Ear
-       * Woolly Bugger
-       * etc.
-       */
-
-      const related =
-        allProducts.filter(
-          item => {
-
-            const itemCategoryId =
-              item.category_id ||
-              item.categories?.id ||
-              "";
-
-
-            const sameCategory =
-              String(itemCategoryId) ===
-              String(categoryId);
-
-
-            const isCurrentProduct =
-              String(item.id) ===
-              String(currentProduct.id);
-
-
-            return (
-              sameCategory &&
-              !isCurrentProduct
-            );
-
-          }
-        );
-
-
-      /*
-       * If there are no other products
-       * in this category, hide the section.
-       */
-
-      if (!related.length) {
-
-        section.style.display =
-          "none";
-
-        return;
-
-      }
-
-
-      /*
-       * Category name.
-       */
-
-      const categoryName =
-        currentProduct.categories?.name ||
-        "Similar Flies";
-
-
-      /*
-       * Section heading.
-       */
-
-      title.textContent =
-        `More ${categoryName} Flies`;
-
-
-      /*
-       * Description.
-       */
-
-      description.textContent =
-        `Explore more flies from the ${categoryName} collection.`;
-
-
-      /*
-       * Show ALL products from the same
-       * category.
-       *
-       * The current product has already
-       * been removed above.
-       */
-
-      grid.innerHTML =
-        related.map(
-          productCard
-        ).join("");
-
-
-      /*
-       * Display section.
-       */
-
-      section.style.display =
-        "block";
-
-
-      /*
-       * Activate product cards.
-       */
-
-      attachAddButtons(
-        grid,
-        related
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "Could not load related products:",
-        error
-      );
-
-
-      section.style.display =
-        "none";
-
-    }
-
-  }
-
-
-  // ============================================================
-  // PRODUCT PAGE
-  // ============================================================
-
-  async function loadProductPage() {
-
-    const box =
-      document.querySelector(
-        "#productDetail"
-      );
-
-
-    if (!box) {
-
-      return;
-
-    }
-
-
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
-
-
-    const id =
-      params.get("id");
-
-
-    if (!id) {
-
-      box.innerHTML = `
-
-        <div class="notice">
-
-          <h2>
-            Product not found
-          </h2>
-
-          <p>
-            No product ID was supplied.
           </p>
 
-          <a
-            href="shop.html"
-            class="btn btn-primary"
-          >
-            Back to Shop
-          </a>
-
         </div>
 
-      `;
-
-      return;
-
-    }
+      </div>
 
 
-    try {
+      <div
+        class="grid grid-4"
+      >
 
-      /*
-       * Get selected product.
-       */
-
-      const productData =
-        await product(id);
-
-
-      const stock =
-        Number(
-          productData.stock || 0
-        );
+        ${
+          list
+            .map(
+              productCard
+            )
+            .join("")
 
 
-      const outOfStock =
-        stock <= 0;
+          ||
 
+          `
 
-      const sizes =
-        parseOptions(
-          productData.sizes
-        );
+            <div class="empty">
 
-
-      const colors =
-        parseOptions(
-          productData.colors
-        );
-
-
-      const image =
-        productData.image_url ||
-        placeholder("Fly");
-
-
-      const categoryName =
-        productData.categories?.name ||
-        "Fishing Fly";
-
-
-      /*
-       * Render product.
-       */
-
-      box.innerHTML = `
-
-        <div class="product-detail-grid">
-
-
-          <!-- PRODUCT IMAGE -->
-
-          <div class="product-detail-image">
-
-            <img
-              src="${escAttr(image)}"
-              alt="${escAttr(productData.name)}"
-            >
-
-          </div>
-
-
-          <!-- PRODUCT INFORMATION -->
-
-          <div class="product-detail-content">
-
-
-            <div class="product-category">
-
-              ${esc(categoryName)}
+              No products in this
+              category yet.
 
             </div>
 
-
-            <h1>
-
-              ${esc(productData.name)}
-
-            </h1>
-
-
-            <div class="product-detail-price">
-
-              ${money(productData.price)}
-
-              <span>
-                / dozen
-              </span>
-
-            </div>
-
-
-            <div class="product-description">
-
-              ${
-                productData.description
-                  ? esc(productData.description)
-                  : "Quality fishing fly suitable for anglers and fly fishing applications."
-              }
-
-            </div>
-
-
-            ${
-              sizes.length
-                ? `
-
-                  <div class="product-option">
-
-                    <label
-                      for="productSize"
-                    >
-                      Size
-                    </label>
-
-
-                    <select
-                      id="productSize"
-                    >
-
-                      <option value="">
-                        Select size
-                      </option>
-
-                      ${sizes.map(
-                        size =>
-                          `
-                            <option value="${escAttr(size)}">
-                              ${esc(size)}
-                            </option>
-                          `
-                      ).join("")}
-
-                    </select>
-
-                  </div>
-
-                `
-                : ""
-            }
-
-
-            ${
-              colors.length
-                ? `
-
-                  <div class="product-option">
-
-                    <label
-                      for="productColor"
-                    >
-                      Color
-                    </label>
-
-
-                    <select
-                      id="productColor"
-                    >
-
-                      <option value="">
-                        Select color
-                      </option>
-
-                      ${colors.map(
-                        color =>
-                          `
-                            <option value="${escAttr(color)}">
-                              ${esc(color)}
-                            </option>
-                          `
-                      ).join("")}
-
-                    </select>
-
-                  </div>
-
-                `
-                : ""
-            }
-
-
-            <div class="product-stock-detail">
-
-              ${
-                outOfStock
-                  ? `
-                    <span class="stock-out">
-                      Out of stock
-                    </span>
-                  `
-                  : `
-                    <span class="stock-in">
-                      ${stock}
-                      dozen${stock === 1 ? "" : "s"}
-                      available
-                    </span>
-                  `
-              }
-
-            </div>
-
-
-            <div class="product-quantity">
-
-              <button
-                type="button"
-                id="qtyMinus"
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-
-
-              <input
-                type="number"
-                id="productQty"
-                value="1"
-                min="1"
-                max="${Math.max(stock, 1)}"
-              >
-
-
-              <button
-                type="button"
-                id="qtyPlus"
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-
-            </div>
-
-
-            <button
-              type="button"
-              id="addProductButton"
-              class="btn btn-primary product-add-button"
-              ${outOfStock ? "disabled" : ""}
-            >
-
-              ${
-                outOfStock
-                  ? "Out of Stock"
-                  : "Add to Cart"
-              }
-
-            </button>
-
-
-            <div
-              id="productMessage"
-              class="product-message"
-              aria-live="polite"
-            ></div>
-
-
-            <div class="product-wholesale-note">
-
-              <strong>
-                Wholesale Pricing
-              </strong>
-
-              <p>
-                Prices are shown in USD per dozen.
-                One dozen contains 12 flies.
-              </p>
-
-            </div>
-
-
-          </div>
-
-        </div>
-
-      `;
-
-
-      // ========================================================
-      // PRODUCT PAGE CONTROLS
-      // ========================================================
-
-      const qtyInput =
-        document.querySelector(
-          "#productQty"
-        );
-
-
-      const minusButton =
-        document.querySelector(
-          "#qtyMinus"
-        );
-
-
-      const plusButton =
-        document.querySelector(
-          "#qtyPlus"
-        );
-
-
-      const addButton =
-        document.querySelector(
-          "#addProductButton"
-        );
-
-
-      const sizeSelect =
-        document.querySelector(
-          "#productSize"
-        );
-
-
-      const colorSelect =
-        document.querySelector(
-          "#productColor"
-        );
-
-
-      const message =
-        document.querySelector(
-          "#productMessage"
-        );
-
-
-      // ========================================================
-      // UPDATE ADD BUTTON
-      // ========================================================
-
-      function updateAddButton() {
-
-        if (!addButton) {
-
-          return;
-
+          `
         }
 
+      </div>
 
-        if (outOfStock) {
+    `;
 
-          addButton.disabled =
-            true;
 
-          addButton.textContent =
-            "Out of Stock";
+    attachAddButtons(
+      box,
+      products
+    );
 
-          return;
 
-        }
+  } catch (error) {
 
+    console.error(
+      "Could not load category:",
+      error
+    );
 
-        let valid = true;
 
+    box.innerHTML = `
 
-        if (
-          sizes.length &&
-          sizeSelect &&
-          !sizeSelect.value
-        ) {
+      <div class="notice error">
 
-          valid = false;
+        ${AMIANI.esc(
+          error.message
+        )}
 
-        }
+      </div>
 
-
-        if (
-          colors.length &&
-          colorSelect &&
-          !colorSelect.value
-        ) {
-
-          valid = false;
-
-        }
-
-
-        addButton.disabled =
-          !valid;
-
-
-        addButton.textContent =
-          valid
-            ? "Add to Cart"
-            : "Select Options";
-
-      }
-
-
-      // ========================================================
-      // QUANTITY MINUS
-      // ========================================================
-
-      if (minusButton) {
-
-        minusButton.addEventListener(
-          "click",
-          () => {
-
-            const current =
-              Number(
-                qtyInput.value || 1
-              );
-
-
-            qtyInput.value =
-              Math.max(
-                1,
-                current - 1
-              );
-
-          }
-        );
-
-      }
-
-
-      // ========================================================
-      // QUANTITY PLUS
-      // ========================================================
-
-      if (plusButton) {
-
-        plusButton.addEventListener(
-          "click",
-          () => {
-
-            const current =
-              Number(
-                qtyInput.value || 1
-              );
-
-
-            qtyInput.value =
-              Math.min(
-                stock,
-                current + 1
-              );
-
-          }
-        );
-
-      }
-
-
-      // ========================================================
-      // VALIDATE QUANTITY
-      // ========================================================
-
-      if (qtyInput) {
-
-        qtyInput.addEventListener(
-          "change",
-          () => {
-
-            let value =
-              Number(
-                qtyInput.value || 1
-              );
-
-
-            if (value < 1) {
-
-              value = 1;
-
-            }
-
-
-            if (value > stock) {
-
-              value = stock;
-
-            }
-
-
-            qtyInput.value =
-              value;
-
-          }
-        );
-
-      }
-
-
-      // ========================================================
-      // SIZE CHANGE
-      // ========================================================
-
-      if (sizeSelect) {
-
-        sizeSelect.addEventListener(
-          "change",
-          () => {
-
-            if (message) {
-
-              message.textContent =
-                "";
-
-            }
-
-
-            updateAddButton();
-
-          }
-        );
-
-      }
-
-
-      // ========================================================
-      // COLOR CHANGE
-      // ========================================================
-
-      if (colorSelect) {
-
-        colorSelect.addEventListener(
-          "change",
-          () => {
-
-            if (message) {
-
-              message.textContent =
-                "";
-
-            }
-
-
-            updateAddButton();
-
-          }
-        );
-
-      }
-
-
-      // ========================================================
-      // ADD PRODUCT TO CART
-      // ========================================================
-
-      if (addButton) {
-
-        addButton.addEventListener(
-          "click",
-          () => {
-
-            if (outOfStock) {
-
-              return;
-
-            }
-
-
-            try {
-
-              const qty =
-                Number(
-                  qtyInput?.value || 1
-                );
-
-
-              const selectedSize =
-                sizeSelect
-                  ? sizeSelect.value
-                  : "";
-
-
-              const selectedColor =
-                colorSelect
-                  ? colorSelect.value
-                  : "";
-
-
-              addCart(
-                productData,
-                {
-                  qty,
-                  size: selectedSize,
-                  color: selectedColor
-                }
-              );
-
-
-              if (message) {
-
-                message.innerHTML = `
-
-                  <div class="success-message">
-
-                    <strong>
-                      Added to cart.
-                    </strong>
-
-                    <button
-                      type="button"
-                      id="viewCartAfterAdd"
-                      class="btn btn-secondary"
-                    >
-                      View Cart
-                    </button>
-
-                  </div>
-
-                `;
-
-
-                const viewCartButton =
-                  document.querySelector(
-                    "#viewCartAfterAdd"
-                  );
-
-
-                if (viewCartButton) {
-
-                  viewCartButton.addEventListener(
-                    "click",
-                    openCart
-                  );
-
-                }
-
-              }
-
-
-              updateCartCount();
-
-
-            } catch (error) {
-
-              console.error(
-                "Add to cart error:",
-                error
-              );
-
-
-              if (message) {
-
-                message.innerHTML = `
-
-                  <div class="error-message">
-
-                    ${esc(
-                      error.message ||
-                      "Unable to add product to cart."
-                    )}
-
-                  </div>
-
-                `;
-
-              }
-
-            }
-
-          }
-        );
-
-      }
-
-
-      // ========================================================
-      // INITIAL BUTTON STATE
-      // ========================================================
-
-      updateAddButton();
-
-
-      // ========================================================
-      // LOAD RELATED PRODUCTS
-      //
-      // THIS IS WHAT MAKES:
-      //
-      // Adams product
-      //       ↓
-      // More Adams Flies
-      //
-      // appear underneath.
-      // ========================================================
-
-      await loadRelatedProducts(
-        productData
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "Product page error:",
-        error
-      );
-
-
-      box.innerHTML = `
-
-        <div class="notice">
-
-          <h2>
-            Unable to load product
-          </h2>
-
-          <p>
-            ${
-              esc(
-                error.message ||
-                "Something went wrong while loading this product."
-              )
-            }
-          </p>
-
-          <a
-            href="shop.html"
-            class="btn btn-primary"
-          >
-            Back to Shop
-          </a>
-
-        </div>
-
-      `;
-
-    }
+    `;
 
   }
 
-
-  // ============================================================
-  // CATEGORY PAGE
-  // ============================================================
-
-  async function loadCategoryPage() {
-
-    const grid =
-      document.querySelector(
-        "#categoryProducts"
-      );
-
-
-    if (!grid) {
-
-      return;
-
-    }
-
-
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
-
-
-    const categorySlug =
-      params.get("slug");
-
-
-    if (!categorySlug) {
-
-      grid.innerHTML = `
-
-        <div class="notice">
-          Category not specified.
-        </div>
-
-      `;
-
-      return;
-
-    }
-
-
-    try {
-
-      const currentCategory =
-        await category(
-          categorySlug
-        );
-
-
-      if (!currentCategory) {
-
-        grid.innerHTML = `
-
-          <div class="notice">
-
-            <h2>
-              Category not found
-            </h2>
-
-            <a
-              href="shop.html"
-              class="btn btn-primary"
-            >
-              Back to Shop
-            </a>
-
-          </div>
-
-        `;
-
-        return;
-
-      }
-
-
-      /*
-       * Update category title if
-       * the page contains these elements.
-       */
-
-      const title =
-        document.querySelector(
-          "#categoryTitle"
-        );
-
-
-      if (title) {
-
-        title.textContent =
-          currentCategory.name;
-
-      }
-
-
-      const description =
-        document.querySelector(
-          "#categoryDescription"
-        );
-
-
-      if (description) {
-
-        description.textContent =
-          currentCategory.description ||
-          "";
-
-      }
-
-
-      const allProducts =
-        await products();
-
-
-      const categoryProducts =
-        allProducts.filter(
-          item =>
-            String(item.category_id) ===
-            String(currentCategory.id)
-        );
-
-
-      if (!categoryProducts.length) {
-
-        grid.innerHTML = `
-
-          <div class="notice">
-
-            No products are available
-            in this category yet.
-
-          </div>
-
-        `;
-
-        return;
-
-      }
-
-
-      grid.innerHTML =
-        categoryProducts
-          .map(productCard)
-          .join("");
-
-
-      attachAddButtons(
-        grid,
-        categoryProducts
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "Category page error:",
-        error
-      );
-
-
-      grid.innerHTML = `
-
-        <div class="notice">
-
-          Unable to load this category.
-
-        </div>
-
-      `;
-
-    }
-
-  }
-
-
-  // ============================================================
-  // INITIALIZE
-  // ============================================================
-
-  async function init() {
-
-    renderHeader();
-
-    renderFooter();
-
-
-    /*
-     * Product page
-     */
-
-    if (
-      document.querySelector(
-        "#productDetail"
-      )
-    ) {
-
-      await loadProductPage();
-
-    }
-
-
-    /*
-     * Category page
-     */
-
-    if (
-      document.querySelector(
-        "#categoryProducts"
-      )
-    ) {
-
-      await loadCategoryPage();
-
-    }
-
-
-    /*
-     * Shop page
-     */
-
-    if (
-      document.querySelector(
-        "#shopProducts"
-      )
-    ) {
-
-      await loadShop();
-
-    }
-
-
-    /*
-     * Home page
-     */
-
-    if (
-      document.querySelector(
-        "#latestProducts"
-      )
-    ) {
-
-      await loadHome();
-
-    }
-
-
-    /*
-     * Keep cart count updated.
-     */
-
-    updateCartCount();
-
-  }
-
-
-  // ============================================================
-  // PUBLIC API
-  // ============================================================
-
-  window.AMIANI = {
-
-    ...AMIANI,
-
-    categories,
-
-    products,
-
-    product,
-
-    category,
-
-    parseOptions,
-
-    cart,
-
-    saveCart,
-
-    addCart,
-
-    removeCart,
-
-    removeCartItem,
-
-    total,
-
-    money,
-
-    moneyPerDozen,
-
-    openCart,
-
-    closeCart,
-
-    renderCartDrawer,
-
-    loadRelatedProducts
-
-  };
-
-
-  // ============================================================
-  // DOM READY
-  // ============================================================
-
-  document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-      init();
-
-    }
-  );
-
-
-})();
+}
