@@ -1,140 +1,124 @@
+```html
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
+    <meta charset="utf-8">
 
-  <meta
-    name="description"
-    content="View fishing fly details, sizes, descriptions, stock and wholesale pricing from Amiani's Fly Wholesalers."
-  >
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
-  <meta
-    name="keywords"
-    content="Amiani's Fly Wholesalers, fishing flies, fly fishing, wholesale fishing flies, fly patterns, fishing fly sizes"
-  >
+    <meta
+        name="description"
+        content="View fishing fly details, sizes, descriptions, stock and wholesale pricing from Amiani's Fly Wholesalers."
+    >
 
-  <meta
-    name="author"
-    content="Amiani's Fly Wholesalers"
-  >
+    <meta
+        name="keywords"
+        content="Amiani's Fly Wholesalers, fishing flies, fly fishing, wholesale fishing flies, fly patterns, fishing fly sizes"
+    >
 
-  <title>Product | Amiani's Fly Wholesalers</title>
+    <meta
+        name="author"
+        content="Amiani's Fly Wholesalers"
+    >
 
-  <link rel="stylesheet" href="style.css">
+    <title>
+        Product | Amiani's Fly Wholesalers
+    </title>
 
-  <!-- Supabase -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-    defer
-  ></script>
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
-  <!-- Supabase configuration -->
-  <script src="supabase-config.js" defer></script>
+    <!-- Supabase -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        defer
+    ></script>
+
+    <!-- Supabase configuration -->
+    <script
+        src="supabase-config.js"
+        defer
+    ></script>
+
 </head>
+
 
 <body>
 
-  <!-- HEADER -->
-  <div id="site-header"></div>
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div id="site-header"></div>
 
 
-  <!-- PRODUCT -->
-  <main class="section">
+    <!-- =====================================================
+         PRODUCT
+    ====================================================== -->
 
-    <div class="container">
+    <main class="section">
 
-      <!-- Breadcrumb -->
-      <div class="breadcrumb">
+        <div class="container">
 
-        <a href="shop.html">
-          Shop
-        </a>
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
 
-        <span aria-hidden="true">
-          /
-        </span>
+                <a href="shop.html">
+                    Shop
+                </a>
 
-        <span>
-          Product
-        </span>
+                <span aria-hidden="true">
+                    /
+                </span>
 
-      </div>
+                <span>
+                    Product
+                </span>
 
-
-      <!-- Main product -->
-      <div
-        id="productDetail"
-        class="product-detail"
-      >
-
-        <div class="notice">
-          Loading product...
-        </div>
-
-      </div>
-
-    </div>
-
-  </main>
+            </div>
 
 
-  <!-- ======================================================
-       RELATED PRODUCTS
-       Shows other products from the same category
-       ====================================================== -->
+            <!-- Product details are loaded by app.js -->
+            <div
+                id="productDetail"
+                class="product-detail"
+            >
 
-  <section
-    id="relatedProducts"
-    class="section"
-    style="display:none;"
-  >
+                <div class="notice">
+                    Loading product...
+                </div>
 
-    <div class="container">
-
-      <div class="section-head">
-
-        <div>
-
-          <div class="eyebrow">
-            MORE FROM THIS COLLECTION
-          </div>
-
-          <h2 id="relatedProductsTitle">
-            More Flies
-          </h2>
-
-          <p
-            id="relatedProductsDescription"
-            class="muted"
-          ></p>
+            </div>
 
         </div>
 
-      </div>
+    </main>
 
 
-      <!-- Related product cards -->
-      <div
-        id="relatedProductsGrid"
-        class="grid grid-4"
-      ></div>
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
 
-    </div>
-
-  </section>
+    <div id="site-footer"></div>
 
 
-  <!-- FOOTER -->
-  <div id="site-footer"></div>
+    <!-- =====================================================
+         APPLICATION
+    ====================================================== -->
 
-
-  <!-- APP -->
-  <script src="app.js" defer></script>
+    <script
+        src="app.js"
+        defer
+    ></script>
 
 </body>
+
 </html>
+```
